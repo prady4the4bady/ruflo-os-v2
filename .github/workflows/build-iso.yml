@@ -32,6 +32,25 @@ jobs:
           mkdir -p installer/live-build-config/config/bootstrap_keyrings
           cp /usr/share/keyrings/debian-archive-keyring.gpg installer/live-build-config/config/bootstrap_keyrings/
 
+      - name: Patch host tools for ISO build
+        run: |
+          # Wrap genisoimage on the host to force -allow-limited-size (filesystem.squashfs exceeds 4GiB-1)
+          if [ -x /usr/bin/genisoimage ] && [ ! -f /usr/bin/genisoimage.real ]; then
+            sudo mv /usr/bin/genisoimage /usr/bin/genisoimage.real
+            printf '#!/bin/sh\nexec /usr/bin/genisoimage.real -allow-limited-size "$@"\n' | sudo tee /usr/bin/genisoimage > /dev/null
+            sudo chmod +x /usr/bin/genisoimage
+          fi
+          echo "genisoimage wrapper: $(cat /usr/bin/genisoimage)"
+          # Verify isohybrid is available (required by live-build binary_grub-pc)
+          if ! which isohybrid; then
+            echo "isohybrid not found in PATH, checking syslinux-utils..."
+            dpkg -L syslinux-utils 2>/dev/null | grep isohybrid || true
+            find /usr -name 'isohybrid' 2>/dev/null || true
+            sudo apt-get install -y --no-install-recommends syslinux-utils
+          fi
+          which isohybrid
+          isohybrid --version 2>&1 || true
+
       - name: Configure and Build ISO
         run: |
           cd installer/live-build-config
