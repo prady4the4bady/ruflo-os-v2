@@ -57,6 +57,31 @@ jobs:
           cat /usr/bin/genisoimage
           cat /usr/bin/mkisofs
 
+      - name: Patch live-build binary_iso script
+        run: |
+          # As a fallback, patch live-build's ISO builder script directly.
+          # This guarantees the flag is present even if live-build bypasses wrapper paths.
+          set -e
+          CANDIDATES="
+          /usr/lib/live/build/binary_iso
+          /usr/share/live/build/scripts/build/binary_iso
+          /usr/share/live/build/build/binary_iso
+          "
+          PATCHED=0
+          for f in $CANDIDATES; do
+            if [ -f "$f" ]; then
+              echo "Patching $f"
+              sudo sed -i -E 's/\b(genisoimage|mkisofs|xorrisofs)\b/\1 -allow-limited-size/g' "$f"
+              echo "Verifying patched invocations in $f"
+              grep -nE 'genisoimage|mkisofs|xorrisofs|allow-limited-size' "$f" || true
+              PATCHED=1
+            fi
+          done
+          if [ "$PATCHED" -ne 1 ]; then
+            echo "ERROR: live-build binary_iso script not found"
+            exit 1
+          fi
+
       - name: Configure and Build ISO
         run: |
           cd installer/live-build-config
