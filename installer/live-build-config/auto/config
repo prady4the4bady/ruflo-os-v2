@@ -4,7 +4,7 @@ set -e
 LB_DISTRIBUTION="bookworm"
 LB_ARCHITECTURE="amd64"
 LB_BINARY_IMAGES="iso-hybrid"
-LB_DEBIAN_INSTALLER="live"
+LB_DEBIAN_INSTALLER="false"
 LB_BOOTLOADER_BIOS="syslinux"
 LB_BOOTLOADER_EFI="grub-efi"
 
