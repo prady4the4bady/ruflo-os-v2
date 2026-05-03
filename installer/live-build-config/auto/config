@@ -12,7 +12,7 @@ lb config noauto \
 --mode debian \
 --architecture amd64 \
 --distribution bookworm \
---debian-installer none \
+--debian-installer false \
 --binary-images iso-hybrid \
 --bootappend-live "boot=live components quiet splash" \
 --linux-flavours amd64 \

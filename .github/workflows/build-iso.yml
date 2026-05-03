@@ -42,9 +42,8 @@ jobs:
             --distribution bookworm \
             --architecture amd64 \
             --binary-images iso-hybrid \
-            --debian-installer none \
+            --debian-installer false \
             --archive-areas "main contrib non-free non-free-firmware" \
-            --apt-options "--yes --allow-downgrades" \
             --mirror-bootstrap "http://deb.debian.org/debian" \
             --mirror-chroot "http://deb.debian.org/debian" \
             --mirror-binary "http://deb.debian.org/debian" \
