@@ -32,21 +32,30 @@ jobs:
           mkdir -p installer/live-build-config/config/bootstrap_keyrings
           cp /usr/share/keyrings/debian-archive-keyring.gpg installer/live-build-config/config/bootstrap_keyrings/
 
-      - name: Patch host genisoimage via dpkg-divert
+      - name: Patch host ISO tools via dpkg-divert
         run: |
           # lb_binary_iso runs `apt-get install genisoimage` on the HOST before calling it,
           # which overwrites any simple mv/wrapper we set up beforehand.
-          # dpkg-divert redirects apt's install path so our wrapper survives the reinstall:
-          #   apt installs genisoimage -> /usr/bin/genisoimage.distrib  (diverted)
-          #   our wrapper stays at     -> /usr/bin/genisoimage           (called by lb)
+          # Also, live-build may invoke either genisoimage or mkisofs.
+          # dpkg-divert redirects apt's install paths so wrappers survive reinstall.
           sudo dpkg-divert --local --rename --add /usr/bin/genisoimage
+          sudo dpkg-divert --local --rename --add /usr/bin/mkisofs
+
           printf '#!/bin/sh\nexec /usr/bin/genisoimage.distrib -allow-limited-size "$@"\n' \
             | sudo tee /usr/bin/genisoimage > /dev/null
+          printf '#!/bin/sh\nexec /usr/bin/mkisofs.distrib -allow-limited-size "$@"\n' \
+            | sudo tee /usr/bin/mkisofs > /dev/null
+
           sudo chmod +x /usr/bin/genisoimage
+          sudo chmod +x /usr/bin/mkisofs
+
           echo "Diversion registered:"
           sudo dpkg-divert --list /usr/bin/genisoimage
+          sudo dpkg-divert --list /usr/bin/mkisofs
+
           echo "Wrapper contents:"
           cat /usr/bin/genisoimage
+          cat /usr/bin/mkisofs
 
       - name: Configure and Build ISO
         run: |
