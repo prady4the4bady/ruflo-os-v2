@@ -5,7 +5,7 @@ Requires=vyrex.service
 
 [Service]
 Type=notify
-User=%i
+User=prady
 Environment=NODE_ENV=production
 Environment=YDOTOOL_SOCKET=/tmp/.ydotool_socket
 Environment=VYREX_SOCKET=/run/vyrex/api.sock
