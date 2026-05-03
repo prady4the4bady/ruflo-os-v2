@@ -1,0 +1,13 @@
+inference_backend: llama_cpp
+model_path: /var/vyrex/models/
+default_model: qwen2.5-7b-instruct-q4_k_m.gguf
+vision_model: llava-1.6-mistral-7b-q4_k_m.gguf
+speech_model: whisper-base.bin
+api_socket: /run/vyrex/api.sock
+max_context: 8192
+gpu_layers: -1
+
+fallback_cloud:
+  enabled: true
+  provider: openai
+  api_key_env: VYREX_CLOUD_KEY

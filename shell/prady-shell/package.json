@@ -1,0 +1,8 @@
+{
+  "name": "prady-shell",
+  "version": "1.0.0",
+  "main": "app.ts",
+  "dependencies": {
+    "ags": "file:../ags-base"
+  }
+}

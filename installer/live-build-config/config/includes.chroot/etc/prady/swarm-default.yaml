@@ -1,0 +1,12 @@
+agents: [lumyn-primary, lumyn-secondary]
+inference_backend: vyrex
+vyrex_sandbox: prady-main
+screen_control: ydotool
+model_default: nvidia/nemotron-3-super-120b-a12b
+model_local_fallback: mistral-7b-instruct
+hf_model_dir: /opt/models/huggingface
+github_model_dir: /opt/models/github
+
+api_keys:
+  anthropic: "${ANTHROPIC_API_KEY}"   # Set during firstboot wizard
+  nvidia_nim: "${NVIDIA_API_KEY}"     # Set during firstboot wizard

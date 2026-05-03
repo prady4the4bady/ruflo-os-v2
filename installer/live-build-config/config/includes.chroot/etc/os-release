@@ -1,0 +1,9 @@
+NAME="PradyOS"
+VERSION="1.0"
+ID=prady
+ID_LIKE=debian
+VERSION_ID="1.0"
+PRETTY_NAME="PradyOS 1.0"
+HOME_URL="https://prady.ai"
+SUPPORT_URL="https://github.com/pradyun/prady-os"
+BUG_REPORT_URL="https://github.com/pradyun/prady-os/issues"

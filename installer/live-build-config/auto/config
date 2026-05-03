@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+lb config noauto \
+  --architecture amd64 \
+  --distribution bookworm \
+  --debian-installer none \
+  --binary-images iso-hybrid \
+  --bootappend-live "boot=live components quiet splash" \
+  --linux-flavours amd64 \
+  --memtest none \
+  --iso-application "PradyOS" \
+  --iso-preparer "PradyOS Project" \
+  --iso-publisher "PradyOS" \
+  --iso-volume "PRADY_OS_1_0" \
+  "${@}"

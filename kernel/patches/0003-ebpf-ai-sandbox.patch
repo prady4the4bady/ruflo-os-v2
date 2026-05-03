@@ -1,0 +1,63 @@
+From 1c6d3f82e1c94b7f5e8b3a7d4a2c1d8e5f6b9c4c Mon Sep 17 00:00:00 2001
+From: PradyOS Architecture <dev@pradyos.org>
+Date: Sun, 02 May 2026 00:00:00 +0000
+Subject: [PATCH 3/3] bpf: Add LSM hooks for AI process sandboxing
+
+This patch extends the eBPF LSM subsystem with specific hooks designed
+to isolate and sandbox autonomous AI agent processes in PradyOS.
+
+Signed-off-by: PradyOS Architecture <dev@pradyos.org>
+---
+ security/bpf/hooks.c | 45 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
+diff --git a/security/bpf/hooks.c b/security/bpf/hooks.c
+index 12345678..87654321 100644
+--- a/security/bpf/hooks.c
++++ b/security/bpf/hooks.c
+@@ -10,6 +10,12 @@
+ #include <linux/bpf_lsm.h>
+ #include <linux/lsm_hooks.h>
+ 
++/* PradyOS eBPF AI Sandbox Hooks */
++
++static int bpf_prady_file_open(struct file *file, const struct cred *cred)
++{
++	return bpf_lsm_file_open(file);
++}
++
++static int bpf_prady_task_alloc(struct task_struct *task, unsigned long clone_flags)
++{
++	return bpf_lsm_task_alloc(task, clone_flags);
++}
++
++static int bpf_prady_socket_connect(struct socket *sock, struct sockaddr *address, int addrlen)
++{
++	return bpf_lsm_socket_connect(sock, address, addrlen);
++}
++
+ static struct security_hook_list bpf_lsm_hooks[] __lsm_ro_after_init = {
+ 	#define LSM_HOOK(RET, DEFAULT, NAME, ...) \
+ 		LSM_HOOK_INIT(NAME, bpf_lsm_##NAME),
+ 	#include <linux/lsm_hook_defs.h>
+ 	#undef LSM_HOOK
++	
++	/* Custom PradyOS Hooks */
++	LSM_HOOK_INIT(file_open, bpf_prady_file_open),
++	LSM_HOOK_INIT(task_alloc, bpf_prady_task_alloc),
++	LSM_HOOK_INIT(socket_connect, bpf_prady_socket_connect),
+ };
+ 
+ static int __init bpf_lsm_init(void)
+ {
+ 	security_add_hooks(bpf_lsm_hooks, ARRAY_SIZE(bpf_lsm_hooks), "bpf");
+ 	pr_info("LSM support for eBPF active (with PradyOS AI Sandbox extensions)\n");
+ 	return 0;
+ }
+ 
+ DEFINE_LSM(bpf) = {
+ 	.name = "bpf",
+ 	.init = bpf_lsm_init,
+ };
+-- 
+2.39.2

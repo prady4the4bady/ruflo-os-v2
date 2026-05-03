@@ -1,0 +1,30 @@
+# Compositor + display
+hyprland
+xwayland
+xdg-utils
+# Input control
+ydotool
+xdotool
+# Screenshot tools
+grim
+slurp
+scrot
+# Shell deps
+nodejs
+npm
+gtk4
+libgtk-4-dev
+gjs
+# Launcher
+rofi-wayland
+# Fonts (macOS-like)
+fonts-inter
+fonts-noto
+fonts-noto-color-emoji
+# Apps
+firefox-esr
+nautilus
+foot
+# Notifications
+libnotify-bin
+mako-notifier

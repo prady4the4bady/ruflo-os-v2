@@ -1,0 +1,22 @@
+# Build artifacts
+installer/live-build-config/.build/
+installer/live-build-config/binary/
+installer/live-build-config/chroot/
+installer/live-build-config/cache/
+*.iso
+*.img
+
+# Upstream clones (too large for git)
+installer/calamares-upstream/
+installer/live-images-reference/
+installer/firstboot-wizard/node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+lumyn-upstream/
+
+# OS
+.DS_Store
+Thumbs.db

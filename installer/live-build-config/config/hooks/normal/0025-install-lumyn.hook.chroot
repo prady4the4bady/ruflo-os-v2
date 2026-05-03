@@ -1,0 +1,6 @@
+#!/bin/sh
+git clone https://github.com/NousResearch/lumyn /opt/lumyn
+cd /opt/lumyn
+pip3 install -e .
+ln -s /opt/lumyn/bin/lumyn /usr/local/bin/lumyn || true
+echo 'LUMYN_HOME=/opt/lumyn' >> /etc/environment

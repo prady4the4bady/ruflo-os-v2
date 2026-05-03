@@ -1,0 +1,13 @@
+# System base
+linux-image-amd64
+linux-headers-amd64
+firmware-linux
+firmware-linux-nonfree
+systemd
+dbus
+network-manager
+pipewire
+pipewire-pulse
+wireplumber
+xdg-desktop-portal-wlr
+wayland-protocols

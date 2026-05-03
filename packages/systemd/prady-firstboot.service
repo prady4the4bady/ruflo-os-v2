@@ -1,0 +1,13 @@
+[Unit]
+Description=PradyOS First Boot Wizard
+After=display-manager.service
+ConditionPathExists=!/var/prady/.firstboot-done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/prady-firstboot
+ExecStartPost=/usr/bin/touch /var/prady/.firstboot-done
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical.target

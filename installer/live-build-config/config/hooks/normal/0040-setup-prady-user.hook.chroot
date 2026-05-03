@@ -1,0 +1,5 @@
+#!/bin/sh
+# Create prady system user for daemons
+useradd -r -s /bin/false -d /var/prady prady-daemon
+mkdir -p /var/prady /var/vyrex/models /run/vyrex
+chown prady-daemon:prady-daemon /var/prady /var/vyrex

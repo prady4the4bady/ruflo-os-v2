@@ -1,0 +1,7 @@
+#!/bin/sh
+git clone https://github.com/ruvnet/prady /opt/prax-agent
+cd /opt/prax-agent
+npm install --production
+ln -s /opt/prax-agent/bin/prady /usr/local/bin/prady
+mkdir -p /etc/prady
+# The swarm configuration template is copied via includes.chroot

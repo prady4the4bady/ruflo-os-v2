@@ -1,0 +1,22 @@
+[Unit]
+Description=Prady AI Agent Service
+After=vyrex.service network-online.target
+Requires=vyrex.service
+
+[Service]
+Type=notify
+User=%i
+Environment=NODE_ENV=production
+Environment=YDOTOOL_SOCKET=/tmp/.ydotool_socket
+Environment=VYREX_SOCKET=/run/vyrex/api.sock
+Environment=DISPLAY=:0
+Environment=WAYLAND_DISPLAY=wayland-1
+Environment=LUMYN_HOME=/opt/lumyn
+Environment=VYREX_SANDBOX=prady-main
+EnvironmentFile=-/etc/prady/api-keys.env
+ExecStartPre=/bin/bash -c 'test -f /etc/prady/api-keys.env || (echo "API keys not configured. Run firstboot wizard." && exit 1)'
+ExecStart=/usr/local/bin/prady start --swarm /etc/prady/swarm-default.yaml
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

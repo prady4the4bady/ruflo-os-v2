@@ -1,0 +1,28 @@
+componentName: prady
+welcomeStyleCalamares: false
+welcomeExpandingLogo: true
+
+strings:
+  productName: PradyOS
+  shortProductName: PradyOS
+  version: "1.0"
+  shortVersion: "1.0"
+  versionedName: "PradyOS 1.0"
+  shortVersionedName: "PradyOS 1.0"
+  bootloaderEntryName: PradyOS
+  productUrl: "https://prady.ai"
+  supportUrl: "https://prady.ai/support"
+  knownIssuesUrl: "https://github.com/pradyun/prady-os/issues"
+  releaseNotesUrl: "https://prady.ai/release-notes"
+
+images:
+  productLogo: "prady-logo.svg"
+  productIcon: "prady-logo.svg"
+  productWelcome: "prady-logo.svg"
+
+slideshow: "show.qml"
+
+style:
+  sidebarBackground: "#1a1a1a"
+  sidebarText: "#ffffff"
+  sidebarTextSelect: "#4f98a3"

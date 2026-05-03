@@ -1,0 +1,89 @@
+/* macOS-inspired theme variables */
+* {
+    font-family: "Inter", "San Francisco", sans-serif;
+    all: unset;
+}
+
+window#menubar {
+    background-color: rgba(30, 30, 30, 0.6);
+    color: white;
+    padding: 0 10px;
+}
+
+.menubar-container {
+    min-height: 30px;
+}
+
+window#dock {
+    background-color: transparent;
+}
+
+.dock-container {
+    background-color: rgba(40, 40, 40, 0.7);
+    border-radius: 24px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dock-icon {
+    border-radius: 12px;
+    padding: 5px;
+    transition: all 0.2s ease;
+}
+
+.dock-icon:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    /* In actual GTK CSS, transform scale is limited, but this is the concept */
+}
+
+.dock-separator {
+    background-color: rgba(255, 255, 255, 0.2);
+    min-width: 1px;
+    margin: 0 5px;
+}
+
+.ask-ai {
+    background-color: rgba(0, 122, 255, 0.2);
+}
+
+.spotlight-container {
+    background-color: rgba(30, 30, 30, 0.9);
+    border-radius: 16px;
+    padding: 20px;
+    min-width: 600px;
+    margin-top: 200px;
+}
+
+.spotlight-input {
+    font-size: 24px;
+    color: white;
+    background-color: transparent;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 10px;
+}
+
+.assistant-panel {
+    background-color: rgba(40, 40, 40, 0.95);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.assistant-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.assistant-stream {
+    color: #cccccc;
+    font-family: monospace;
+}
+
+.assistant-stop-btn {
+    background-color: #ff3b30;
+    color: white;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 20px;
+    font-weight: bold;
+}

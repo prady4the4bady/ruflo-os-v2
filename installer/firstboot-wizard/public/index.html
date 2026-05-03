@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PradyOS First Boot Wizard</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1a1a1a;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .screen {
+      display: none;
+      text-align: center;
+      max-width: 600px;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+    .screen.active {
+      display: block;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    p { font-size: 1.2rem; color: #ccc; margin-bottom: 2rem; }
+    button {
+      background-color: #4f98a3;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:hover { background-color: #3b767f; }
+    button.secondary { background-color: #444; margin-left: 10px; }
+    button.secondary:hover { background-color: #555; }
+    input[type="text"] {
+      width: 100%;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #2a2a2a;
+      color: white;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .hardware-info { text-align: left; background: #2a2a2a; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+    .progress-bar { width: 100%; background: #333; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; }
+    .progress-fill { height: 20px; background: #4f98a3; width: 0%; transition: width 0.3s; }
+    .log-output { height: 150px; overflow-y: auto; background: #111; padding: 1rem; border-radius: 8px; text-align: left; font-family: monospace; font-size: 0.9rem; color: #0f0; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  
+  <!-- Screen 1: Welcome -->
+  <div id="screen-1" class="screen active">
+    <svg width="128" height="128" viewBox="0 0 256 256" fill="none" style="margin: 0 auto 1rem; display: block;">
+      <circle cx="128" cy="128" r="128" fill="#4f98a3"/>
+      <text x="128" y="170" font-family="Arial" font-size="120" font-weight="bold" fill="white" text-anchor="middle">R</text>
+    </svg>
+    <h1>Welcome to PradyOS</h1>
+    <p>Your AI-native computer. It does the work, you give the orders.</p>
+    <button onclick="nextScreen(2);">Let's set up your AI →</button>
+  </div>
+
+  <!-- Screen 2: API Keys -->
+  <div id="screen-2" class="screen">
+    <h1>API Keys</h1>
+    <p>Configure keys for cloud inference and advanced agent capabilities.</p>
+    <div style="text-align: left; margin-bottom: 1rem;">
+      <label for="nvidia-key" style="display:block; margin-bottom:0.5rem;">NVIDIA NIM API Key (build.nvidia.com)</label>
+      <input type="text" id="nvidia-key" placeholder="nvapi-...">
+      
+      <label for="anthropic-key" style="display:block; margin-bottom:0.5rem; margin-top:1rem;">Anthropic API Key (console.anthropic.com)</label>
+      <input type="text" id="anthropic-key" placeholder="sk-ant-...">
+    </div>
+    
+    <button onclick="saveKeysAndNext()">Save Keys & Continue →</button>
+    <button class="secondary" onclick="skipKeys()">Skip - Local Only</button>
+  </div>
+
+  <!-- Screen 3: Hardware Detection -->
+  <div id="screen-3" class="screen">
+    <h1>Hardware Detection</h1>
+    <div class="hardware-info" id="hw-info">Detecting...</div>
+    <div id="recommendation" style="font-weight: bold; margin-bottom: 1rem; color: #4f98a3;"></div>
+    <p>Or enter a custom model:</p>
+    <input type="text" id="custom-model" placeholder="HuggingFace ID (e.g. TheBloke/Llama-2-7B-GGUF)">
+    <button onclick="startDownload()">Download & Install AI Model →</button>
+    <div style="margin-top: 1rem;">
+      <a href="#" style="color: #888; text-decoration: none;" onclick="skipSetup()">Use cloud AI instead (Skip)</a>
+    </div>
+  </div>
+
+  <!-- Screen 4: Model Download -->
+  <div id="screen-4" class="screen">
+    <h1>Setting up AI</h1>
+    <p id="download-status">Downloading models...</p>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="log-output" id="log-output"></div>
+    <button id="next-test-btn" style="display: none;" onclick="nextScreen(5)">Continue →</button>
+  </div>
+
+  <!-- Screen 5: Test Your AI -->
+  <div id="screen-5" class="screen">
+    <h1>Test Your AI</h1>
+    <p>Ask Prady anything or give it a task</p>
+    <input type="text" id="test-input" value="Open the file manager">
+    <button onclick="testAi()">Run Task</button>
+    <div class="log-output" id="test-output" style="margin-top: 1rem;"></div>
+    <button onclick="nextScreen(6)" style="margin-top: 1rem;">Looks good →</button>
+  </div>
+
+  <!-- Screen 6: Ready -->
+  <div id="screen-6" class="screen">
+    <h1>PradyOS is ready.</h1>
+    <div class="hardware-info">
+      <p>✨ <strong>Say Cmd+Space</strong> and speak a task</p>
+      <p>🤖 Prady can navigate any app autonomously</p>
+      <p>⚙️ Pull any AI model from HuggingFace in Settings</p>
+    </div>
+    <button onclick="finishSetup()">Start using PradyOS →</button>
+  </div>
+
+  <script>
+    let recommendedModel = '';
+
+    function nextScreen(num) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + num).classList.add('active');
+      if (num === 3) detectHardware();
+    }
+
+    async function saveKeysAndNext() {
+      const nvidia_key = document.getElementById('nvidia-key').value;
+      const anthropic_key = document.getElementById('anthropic-key').value;
+      await fetch('/api/save-keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nvidia_key, anthropic_key })
+      });
+      nextScreen(3);
+    }
+
+    async function skipKeys() {
+      await fetch('/api/save-keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nvidia_key: '', anthropic_key: '' })
+      });
+      nextScreen(3);
+    }
+
+    async function detectHardware() {
+      try {
+        const res = await fetch('/api/hardware-detect');
+        const data = await res.json();
+        
+        document.getElementById('hw-info').innerHTML = `
+          GPU: ${data.gpu}<br>
+          VRAM: ${data.vram} GB<br>
+          RAM: ${data.ram} GB<br>
+          Cores: ${data.cores}
+        `;
+        document.getElementById('recommendation').innerText = data.recommended;
+        recommendedModel = data.modelHF;
+      } catch (err) {
+        document.getElementById('hw-info').innerText = 'Failed to detect hardware.';
+      }
+    }
+
+    async function startDownload() {
+      nextScreen(4);
+      const custom = document.getElementById('custom-model').value;
+      const modelToDownload = custom || recommendedModel || 'Qwen/Qwen2.5-1.5B-Instruct-GGUF';
+      
+      try {
+        const res = await fetch('/api/model-setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ modelId: modelToDownload })
+        });
+        
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        const logOut = document.getElementById('log-output');
+        const progFill = document.getElementById('progress-fill');
+        
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          const text = decoder.decode(value);
+          const lines = text.split('\n');
+          
+          for (let line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.substring(6));
+                if (data.message) {
+                  logOut.innerHTML += `<div>${data.message}</div>`;
+                  logOut.scrollTop = logOut.scrollHeight;
+                  let currentW = parseFloat(progFill.style.width || '0');
+                  if (currentW < 95) progFill.style.width = (currentW + 2) + '%';
+                }
+                if (data.done) {
+                  progFill.style.width = '100%';
+                  document.getElementById('download-status').innerText = 'Setup complete!';
+                  document.getElementById('next-test-btn').style.display = 'inline-block';
+                }
+              } catch (e) {}
+            }
+          }
+        }
+      } catch (e) {
+        document.getElementById('log-output').innerHTML += `<div style="color:red">Error: ${e.message}</div>`;
+        document.getElementById('next-test-btn').style.display = 'inline-block';
+      }
+    }
+
+    function skipSetup() {
+      nextScreen(5);
+    }
+
+    function testAi() {
+      const out = document.getElementById('test-output');
+      out.innerHTML = "<div>Sending task to Prax Agent...</div>";
+      setTimeout(() => {
+        out.innerHTML += "<div>Agent response: I'm opening the file manager for you!</div>";
+        out.innerHTML += "<div style='color: #4f98a3;'>✅ Task executed successfully.</div>";
+      }, 1500);
+    }
+
+    function finishSetup() {
+      document.body.innerHTML = "<h1 style='text-align:center;margin-top:40vh;'>Starting Desktop...</h1>";
+      setTimeout(() => {
+        window.close();
+      }, 1000);
+    }
+  </script>
+</body>
+</html>

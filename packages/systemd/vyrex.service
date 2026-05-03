@@ -1,0 +1,14 @@
+[Unit]
+Description=Vyrex Onboarding
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/vyrex onboard --non-interactive
+ExecStartPost=/bin/systemctl disable vyrex.service
+ExecStartPost=/bin/systemctl enable prax-agent.service
+ExecStartPost=/bin/systemctl start prax-agent.service
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

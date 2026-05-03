@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=PradyOS Desktop
+Comment=AI-native desktop environment
+Exec=/usr/local/bin/prady-session
+Type=Application

@@ -1,0 +1,5 @@
+#!/bin/sh
+systemctl enable vyrex.service
+systemctl enable prax-agent.service
+systemctl enable ydotoold.service
+systemctl enable NetworkManager.service

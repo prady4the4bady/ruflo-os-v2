@@ -1,0 +1,8 @@
+#!/bin/sh
+git clone --depth=1 https://github.com/NVIDIA/Vyrex /opt/vyrex
+cd /opt/vyrex
+pip3 install -e . --quiet
+# Also install nemo-toolkit for model management
+pip3 install nemo-toolkit[all] --quiet || pip3 install nemo-toolkit --quiet
+# Export VYREX_HOME
+echo 'export VYREX_HOME=/opt/vyrex' >> /etc/environment
