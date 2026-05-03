@@ -42,7 +42,7 @@ jobs:
             --distribution bookworm \
             --architecture amd64 \
             --binary-images iso-hybrid \
-            --bootloaders "grub-pc grub-efi" \
+            --bootloader grub \
             --debian-installer false \
             --archive-areas "main contrib non-free non-free-firmware" \
             --mirror-bootstrap "http://deb.debian.org/debian" \
