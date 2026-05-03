@@ -12,7 +12,8 @@ wl-clipboard
 # Shell deps
 nodejs
 npm
-gtk4
+libgtk-4-1
+gir1.2-gtk-4.0
 libgtk-4-dev
 gjs
 # Launcher
