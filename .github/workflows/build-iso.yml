@@ -34,17 +34,30 @@ jobs:
 
       - name: Patch host ISO tools via dpkg-divert
         run: |
-          # lb_binary_iso runs `apt-get install genisoimage` on the HOST before calling it,
-          # which overwrites any simple mv/wrapper we set up beforehand.
-          # Also, live-build may invoke either genisoimage or mkisofs.
-          # dpkg-divert redirects apt's install paths so wrappers survive reinstall.
+          # dpkg-divert makes apt install genisoimage to .distrib instead of the real path.
+          # Our wrapper at the real path always injects -allow-limited-size.
+          # The wrapper must handle the case where .distrib doesn't exist yet (pre-install).
           sudo dpkg-divert --local --rename --add /usr/bin/genisoimage
           sudo dpkg-divert --local --rename --add /usr/bin/mkisofs
 
-          printf '#!/bin/sh\nexec /usr/bin/genisoimage.distrib -allow-limited-size "$@"\n' \
-            | sudo tee /usr/bin/genisoimage > /dev/null
-          printf '#!/bin/sh\nexec /usr/bin/mkisofs.distrib -allow-limited-size "$@"\n' \
-            | sudo tee /usr/bin/mkisofs > /dev/null
+          # Write wrappers: find the real binary by checking both the .distrib path
+          # (set by divert after apt install) and /usr/bin/genisoimage.real (set by
+          # the chroot hook), falling back to any genisoimage on PATH.
+          cat << 'WRAPPER' | sudo tee /usr/bin/genisoimage > /dev/null
+#!/bin/sh
+for bin in /usr/bin/genisoimage.distrib /usr/bin/genisoimage.real; do
+  if [ -x "$bin" ]; then exec "$bin" -allow-limited-size "$@"; fi
+done
+exec "$(which genisoimage.distrib genisoimage.real 2>/dev/null | head -1)" -allow-limited-size "$@"
+WRAPPER
+
+          cat << 'WRAPPER' | sudo tee /usr/bin/mkisofs > /dev/null
+#!/bin/sh
+for bin in /usr/bin/mkisofs.distrib /usr/bin/mkisofs.real; do
+  if [ -x "$bin" ]; then exec "$bin" -allow-limited-size "$@"; fi
+done
+exec "$(which mkisofs.distrib mkisofs.real 2>/dev/null | head -1)" -allow-limited-size "$@"
+WRAPPER
 
           sudo chmod +x /usr/bin/genisoimage
           sudo chmod +x /usr/bin/mkisofs
@@ -59,27 +72,28 @@ jobs:
 
       - name: Patch live-build binary_iso script
         run: |
-          # As a fallback, patch live-build's ISO builder script directly.
-          # This guarantees the flag is present even if live-build bypasses wrapper paths.
-          set -e
-          CANDIDATES="
-          /usr/lib/live/build/binary_iso
-          /usr/share/live/build/scripts/build/binary_iso
-          /usr/share/live/build/build/binary_iso
-          "
+          # Find and patch live-build's ISO builder script(s) to add -allow-limited-size.
+          echo "=== Searching for live-build binary_iso script ==="
+          find /usr /lib /share -name 'binary_iso' 2>/dev/null || true
+          find /usr -path '*/live/build/*' -name 'binary*' 2>/dev/null | sort || true
+          echo "=== live-build package contents ==="
+          dpkg -L live-build 2>/dev/null | grep -i 'binary' || true
+
           PATCHED=0
-          for f in $CANDIDATES; do
+          while IFS= read -r f; do
             if [ -f "$f" ]; then
               echo "Patching $f"
-              sudo sed -i -E 's/\b(genisoimage|mkisofs|xorrisofs)\b/\1 -allow-limited-size/g' "$f"
-              echo "Verifying patched invocations in $f"
+              sudo sed -i -E \
+                's/(genisoimage|mkisofs|xorrisofs)([^-])/\1 -allow-limited-size\2/g' \
+                "$f"
               grep -nE 'genisoimage|mkisofs|xorrisofs|allow-limited-size' "$f" || true
               PATCHED=1
             fi
-          done
-          if [ "$PATCHED" -ne 1 ]; then
-            echo "ERROR: live-build binary_iso script not found"
-            exit 1
+          done < <(find /usr -name 'binary_iso' 2>/dev/null)
+
+          if [ "$PATCHED" -eq 0 ]; then
+            echo "WARNING: live-build binary_iso script not found via find — skipping direct patch"
+            echo "Relying on dpkg-divert wrappers for -allow-limited-size injection"
           fi
 
       - name: Configure and Build ISO
