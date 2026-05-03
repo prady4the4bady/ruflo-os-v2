@@ -22,6 +22,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y live-build debootstrap curl gpg isolinux syslinux-common
+          sudo mkdir -p /root/isolinux
+          sudo cp /usr/lib/ISOLINUX/isolinux.bin /root/isolinux/
+          sudo cp /usr/lib/syslinux/modules/bios/vesamenu.c32 /root/isolinux/
 
       - name: Fix Debian Keyring
         run: |
