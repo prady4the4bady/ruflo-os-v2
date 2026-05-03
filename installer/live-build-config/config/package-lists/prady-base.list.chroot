@@ -11,3 +11,4 @@ pipewire-pulse
 wireplumber
 xdg-desktop-portal-wlr
 wayland-protocols
+syslinux-utils
