@@ -41,24 +41,17 @@ jobs:
             mtools xorriso git curl python3-pip nodejs npm \
             debian-archive-keyring
             
-      - name: Configure live-build
+      - name: Fix Debian Keyring
         run: |
-          cd installer/live-build-config
-          sudo lb config \
-            --distribution bookworm \
-            --architecture amd64 \
-            --binary-images iso-hybrid \
-            --debian-installer live \
-            --archive-areas "main contrib non-free non-free-firmware" \
-            --apt-options "--yes --allow-downgrades" \
-            --mirror-bootstrap "http://deb.debian.org/debian/" \
-            --mirror-chroot "http://deb.debian.org/debian/" \
-            --mirror-binary "http://deb.debian.org/debian/" \
-            --apt-http-proxy "http://ftp.us.debian.org/debian"
+          sudo mkdir -p /usr/share/keyrings
+          curl -fsSL https://ftp-master.debian.org/keys/release-12.asc | sudo gpg --dearmor > deb12.gpg
+          curl -fsSL https://ftp-master.debian.org/keys/archive-key-12.asc | sudo gpg --dearmor > deb12-archive.gpg
+          cat deb12.gpg deb12-archive.gpg | sudo tee /usr/share/keyrings/debian-archive-keyring.gpg > /dev/null
 
-      - name: Build ISO (this takes ~60-90 mins)
+      - name: Configure and Build ISO (this takes ~60-90 mins)
         run: |
           cd installer/live-build-config
+          # Using lb build directly which triggers auto/config
           sudo lb build 2>&1 | tee /tmp/lb-build.log
         timeout-minutes: 100
         
