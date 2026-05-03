@@ -1,0 +1,11 @@
+#!/bin/sh
+# Wrap genisoimage to always pass -allow-limited-size
+# This is needed because filesystem.squashfs can exceed 4GiB
+set -e
+
+cat > /usr/local/bin/genisoimage << 'EOF'
+#!/bin/sh
+exec /usr/bin/genisoimage -allow-limited-size "$@"
+EOF
+
+chmod +x /usr/local/bin/genisoimage
