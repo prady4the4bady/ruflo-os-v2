@@ -1,11 +1,19 @@
 # AI stack
 python3
 python3-pip
+python3-venv
 python3-flask
 tesseract-ocr
 tesseract-ocr-eng
 espeak-ng
 ffmpeg
+git
+curl
+wget
+nodejs
+npm
+ollama
+nvidia-cuda-toolkit # only installs on NVIDIA systems
 # llama.cpp deps
 build-essential
 cmake

@@ -1,5 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 systemctl enable vyrex.service
 systemctl enable prax-agent.service
 systemctl enable ydotoold.service
+systemctl enable prady-firstboot.service
 systemctl enable NetworkManager.service
+systemctl set-default graphical.target
+exit 0

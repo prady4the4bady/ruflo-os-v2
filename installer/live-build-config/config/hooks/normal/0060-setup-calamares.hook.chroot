@@ -6,3 +6,4 @@ cp -r /tmp/calamares-config/* /etc/calamares/
 # Link branding  
 mkdir -p /usr/share/calamares/branding
 cp -r /etc/calamares/branding/prady /usr/share/calamares/branding/
+exit 0

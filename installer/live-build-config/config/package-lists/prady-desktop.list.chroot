@@ -9,6 +9,7 @@ xdotool
 grim
 slurp
 scrot
+wl-clipboard
 # Shell deps
 nodejs
 npm
@@ -17,6 +18,7 @@ libgtk-4-dev
 gjs
 # Launcher
 rofi-wayland
+wofi
 # Fonts (macOS-like)
 fonts-inter
 fonts-noto
@@ -24,7 +26,13 @@ fonts-noto-color-emoji
 # Apps
 firefox-esr
 nautilus
+thunar
 foot
+kitty
 # Notifications
 libnotify-bin
 mako-notifier
+waybar
+xdg-user-dirs
+xdg-desktop-portal-hyprland
+polkit-kde-agent-1
