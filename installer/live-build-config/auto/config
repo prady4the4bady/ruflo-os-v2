@@ -20,4 +20,8 @@ lb config noauto \
   --iso-preparer "PradyOS Project" \
   --iso-publisher "PradyOS" \
   --iso-volume "PRADY_OS_1_0" \
+  --archive-areas "main contrib non-free non-free-firmware" \
+  --mirror-bootstrap "http://deb.debian.org/debian/" \
+  --mirror-chroot "http://deb.debian.org/debian/" \
+  --mirror-binary "http://deb.debian.org/debian/" \
   "${@}"
