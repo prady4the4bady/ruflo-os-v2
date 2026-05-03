@@ -36,28 +36,23 @@ jobs:
         run: |
           # dpkg-divert makes apt install genisoimage to .distrib instead of the real path.
           # Our wrapper at the real path always injects -allow-limited-size.
-          # The wrapper must handle the case where .distrib doesn't exist yet (pre-install).
           sudo dpkg-divert --local --rename --add /usr/bin/genisoimage
           sudo dpkg-divert --local --rename --add /usr/bin/mkisofs
 
-          # Write wrappers: find the real binary by checking both the .distrib path
-          # (set by divert after apt install) and /usr/bin/genisoimage.real (set by
-          # the chroot hook), falling back to any genisoimage on PATH.
-          cat << 'WRAPPER' | sudo tee /usr/bin/genisoimage > /dev/null
-#!/bin/sh
-for bin in /usr/bin/genisoimage.distrib /usr/bin/genisoimage.real; do
-  if [ -x "$bin" ]; then exec "$bin" -allow-limited-size "$@"; fi
-done
-exec "$(which genisoimage.distrib genisoimage.real 2>/dev/null | head -1)" -allow-limited-size "$@"
-WRAPPER
+          # Write wrappers using printf (avoids heredoc YAML parsing issues)
+          printf '%s\n' '#!/bin/sh' \
+            'for bin in /usr/bin/genisoimage.distrib /usr/bin/genisoimage.real; do' \
+            '  [ -x "$bin" ] && exec "$bin" -allow-limited-size "$@"' \
+            'done' \
+            'echo "genisoimage wrapper: no real binary found" >&2; exit 1' \
+            | sudo tee /usr/bin/genisoimage > /dev/null
 
-          cat << 'WRAPPER' | sudo tee /usr/bin/mkisofs > /dev/null
-#!/bin/sh
-for bin in /usr/bin/mkisofs.distrib /usr/bin/mkisofs.real; do
-  if [ -x "$bin" ]; then exec "$bin" -allow-limited-size "$@"; fi
-done
-exec "$(which mkisofs.distrib mkisofs.real 2>/dev/null | head -1)" -allow-limited-size "$@"
-WRAPPER
+          printf '%s\n' '#!/bin/sh' \
+            'for bin in /usr/bin/mkisofs.distrib /usr/bin/mkisofs.real; do' \
+            '  [ -x "$bin" ] && exec "$bin" -allow-limited-size "$@"' \
+            'done' \
+            'echo "mkisofs wrapper: no real binary found" >&2; exit 1' \
+            | sudo tee /usr/bin/mkisofs > /dev/null
 
           sudo chmod +x /usr/bin/genisoimage
           sudo chmod +x /usr/bin/mkisofs
