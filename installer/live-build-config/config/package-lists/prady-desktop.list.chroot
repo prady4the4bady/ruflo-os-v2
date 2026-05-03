@@ -1,5 +1,4 @@
 # Compositor + display
-hyprland
 xwayland
 xdg-utils
 # Input control
@@ -33,13 +32,8 @@ libnotify-bin
 mako-notifier
 waybar
 xdg-user-dirs
-xdg-desktop-portal-hyprland
 polkit-kde-agent-1
 # UI Tools
-nwg-dock
-nwg-look
-hyprpaper
-hyprlock
 dunst
 # Python GTK
 python3-gi

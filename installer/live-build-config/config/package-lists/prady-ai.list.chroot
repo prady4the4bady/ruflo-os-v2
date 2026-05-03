@@ -12,14 +12,12 @@ curl
 wget
 nodejs
 npm
-ollama
-nvidia-cuda-toolkit # only installs on NVIDIA systems
+# only installs on NVIDIA systems
+nvidia-cuda-toolkit
 # llama.cpp deps
 build-essential
 cmake
 libcurl4-openssl-dev
-# Hugging Face CLI
-python3-huggingface-hub
 # GTK deps
 python3-gi
 python3-gi-cairo

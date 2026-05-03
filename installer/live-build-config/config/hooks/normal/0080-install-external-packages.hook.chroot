@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+
+echo "Installing external AI and Desktop tools..."
+
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh || true
+
+# Install Hugging Face Hub CLI
+pip3 install --no-cache-dir huggingface_hub
+
+# Install Hyprland & NWG tools from third-party repositories
+# We'll use the nwg-shell repository for Debian
+wget -qO - https://nwg-piotr.github.io/nwg-shell/public.key | gpg --dearmor -o /usr/share/keyrings/nwg-shell.gpg
+echo "deb [signed-by=/usr/share/keyrings/nwg-shell.gpg] https://nwg-piotr.github.io/nwg-shell/debian/ stable main" > /etc/apt/sources.list.d/nwg-shell.list
+
+apt-get update
+apt-get install -y nwg-dock-hyprland nwg-look hyprpaper hyprlock
+
+# For Hyprland itself, since it's not in nwg-shell's debian repo usually, 
+# we'll try to find it or use a prebuilt binary if missing.
+# In a production OS, we'd have our own repo. 
+# For now, we'll try to install it if available, or warn.
+apt-get install -y hyprland xdg-desktop-portal-hyprland || echo "Hyprland not found in repo, will need manual install or custom repo."
+
+exit 0
