@@ -32,63 +32,53 @@ jobs:
           mkdir -p installer/live-build-config/config/bootstrap_keyrings
           cp /usr/share/keyrings/debian-archive-keyring.gpg installer/live-build-config/config/bootstrap_keyrings/
 
-      - name: Patch host ISO tools via dpkg-divert
+      - name: Install ISO tool wrappers
         run: |
-          # dpkg-divert makes apt install genisoimage to .distrib instead of the real path.
-          # Our wrapper at the real path always injects -allow-limited-size.
-          sudo dpkg-divert --local --rename --add /usr/bin/genisoimage
-          sudo dpkg-divert --local --rename --add /usr/bin/mkisofs
-
-          # Write wrappers using printf (avoids heredoc YAML parsing issues)
-          printf '%s\n' '#!/bin/sh' \
-            'for bin in /usr/bin/genisoimage.distrib /usr/bin/genisoimage.real; do' \
-            '  [ -x "$bin" ] && exec "$bin" -allow-limited-size "$@"' \
-            'done' \
-            'echo "genisoimage wrapper: no real binary found" >&2; exit 1' \
-            | sudo tee /usr/bin/genisoimage > /dev/null
-
-          printf '%s\n' '#!/bin/sh' \
-            'for bin in /usr/bin/mkisofs.distrib /usr/bin/mkisofs.real; do' \
-            '  [ -x "$bin" ] && exec "$bin" -allow-limited-size "$@"' \
-            'done' \
-            'echo "mkisofs wrapper: no real binary found" >&2; exit 1' \
-            | sudo tee /usr/bin/mkisofs > /dev/null
-
-          sudo chmod +x /usr/bin/genisoimage
-          sudo chmod +x /usr/bin/mkisofs
-
-          echo "Diversion registered:"
-          sudo dpkg-divert --list /usr/bin/genisoimage
-          sudo dpkg-divert --list /usr/bin/mkisofs
-
-          echo "Wrapper contents:"
-          cat /usr/bin/genisoimage
-          cat /usr/bin/mkisofs
+          # Place wrappers in /usr/local/bin, which appears before /usr/bin in both
+          # the default PATH and sudo's secure_path (/usr/local/bin:/usr/bin:...).
+          # When live-build calls genisoimage (or sudo genisoimage), our wrapper is
+          # found first and always injects -allow-limited-size before forwarding.
+          printf '%s\n' '#!/bin/sh' 'exec /usr/bin/genisoimage -allow-limited-size "$@"' \
+            | sudo tee /usr/local/bin/genisoimage > /dev/null
+          printf '%s\n' '#!/bin/sh' 'exec /usr/bin/mkisofs -allow-limited-size "$@"' \
+            | sudo tee /usr/local/bin/mkisofs > /dev/null
+          printf '%s\n' '#!/bin/sh' 'exec /usr/bin/xorrisofs -allow-limited-size "$@"' \
+            | sudo tee /usr/local/bin/xorrisofs > /dev/null
+          sudo chmod +x /usr/local/bin/genisoimage /usr/local/bin/mkisofs /usr/local/bin/xorrisofs
+          echo "Wrappers installed:"
+          cat /usr/local/bin/genisoimage
+          cat /usr/local/bin/mkisofs
 
       - name: Patch live-build binary_iso script
         run: |
-          # Find and patch live-build's ISO builder script(s) to add -allow-limited-size.
-          echo "=== Searching for live-build binary_iso script ==="
-          find /usr /lib /share -name 'binary_iso' 2>/dev/null || true
-          find /usr -path '*/live/build/*' -name 'binary*' 2>/dev/null | sort || true
-          echo "=== live-build package contents ==="
-          dpkg -L live-build 2>/dev/null | grep -i 'binary' || true
+          # The live-build ISO builder is at a known path (lb_ prefix, confirmed by
+          # dpkg -L live-build).  Patch it directly so -allow-limited-size is always
+          # passed when genisoimage / mkisofs is invoked, regardless of PATH tricks.
+          LB_BINARY_ISO="/usr/lib/live/build/lb_binary_iso"
 
-          PATCHED=0
-          while IFS= read -r f; do
-            if [ -f "$f" ]; then
-              echo "Patching $f"
-              sudo sed -i -E \
-                's/(genisoimage|mkisofs|xorrisofs)([^-])/\1 -allow-limited-size\2/g' \
-                "$f"
-              grep -nE 'genisoimage|mkisofs|xorrisofs|allow-limited-size' "$f" || true
-              PATCHED=1
-            fi
-          done < <(find /usr -name 'binary_iso' 2>/dev/null)
+          echo "=== live-build binary scripts ==="
+          dpkg -L live-build 2>/dev/null | grep -E '/build/lb_' | sort || true
 
-          if [ "$PATCHED" -eq 0 ]; then
-            echo "WARNING: live-build binary_iso script not found via find — skipping direct patch"
-            echo "Relying on dpkg-divert wrappers for -allow-limited-size injection"
+          if [ ! -f "$LB_BINARY_ISO" ]; then
+            echo "WARNING: $LB_BINARY_ISO not found — trying find fallback"
+            LB_BINARY_ISO=$(find /usr -name 'lb_binary_iso' 2>/dev/null | head -1)
+          fi
+
+          if [ -n "$LB_BINARY_ISO" ] && [ -f "$LB_BINARY_ISO" ]; then
+            echo "=== Before patch (genisoimage/mkisofs lines in $LB_BINARY_ISO) ==="
+            grep -n 'genisoimage\|mkisofs\|xorrisofs\|allow-limited' "$LB_BINARY_ISO" || echo "(none)"
+
+            sudo sed -i \
+              -e 's/genisoimage /genisoimage -allow-limited-size /g' \
+              -e 's/mkisofs /mkisofs -allow-limited-size /g' \
+              -e 's/xorrisofs /xorrisofs -allow-limited-size /g' \
+              "$LB_BINARY_ISO"
+
+            echo "=== After patch ==="
+            grep -n 'genisoimage\|mkisofs\|xorrisofs\|allow-limited' "$LB_BINARY_ISO" || echo "(none)"
+            echo "PATCHED: $LB_BINARY_ISO"
+          else
+            echo "ERROR: lb_binary_iso not found anywhere — relying solely on /usr/local/bin wrappers"
           fi
 
       - name: Configure and Build ISO
