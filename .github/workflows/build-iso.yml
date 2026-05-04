@@ -34,10 +34,8 @@ jobs:
 
       - name: Patch live-build binary_iso script for large squashfs
         run: |
-          # On Ubuntu 24.04, /usr/bin/genisoimage is xorriso in genisoimage emulation mode.
-          # xorriso does NOT accept -allow-limited-size (a genisoimage-only flag).
-          # xorriso handles files >4GiB natively via ISO 9660 level 3 (-iso-level 3).
-          # Patch lb_binary_iso to add -iso-level 3 to the genisoimage invocation line.
+          # Real genisoimage (9:1.1.11-3.4) is used by live-build and requires
+          # -allow-limited-size for files >4GiB. Patch lb_binary_iso directly.
           LB_BINARY_ISO="/usr/lib/live/build/lb_binary_iso"
 
           if [ ! -f "$LB_BINARY_ISO" ]; then
@@ -45,19 +43,20 @@ jobs:
           fi
 
           echo "Using: $LB_BINARY_ISO"
-          echo "=== ISO invocation line before patch ==="
-          grep -n 'genisoimage\b.*\${GENISOIMAGE_OPTIONS' "$LB_BINARY_ISO" || echo "(not found)"
+          echo "=== genisoimage/mkisofs lines before patch ==="
+          grep -n 'genisoimage\|mkisofs' "$LB_BINARY_ISO" || echo "(not found)"
 
-          # Patch: insert -iso-level 3 right after the genisoimage command on the invocation line
+          # Patch: add -allow-limited-size after genisoimage/mkisofs (no ^ anchor — lines may be indented)
           sudo sed -i \
-            's|^genisoimage \${GENISOIMAGE_OPTIONS}|genisoimage -iso-level 3 ${GENISOIMAGE_OPTIONS}|' \
+            -e 's/genisoimage \${GENISOIMAGE_OPTIONS}/genisoimage -allow-limited-size ${GENISOIMAGE_OPTIONS}/g' \
+            -e 's/mkisofs \${GENISOIMAGE_OPTIONS}/mkisofs -allow-limited-size ${GENISOIMAGE_OPTIONS}/g' \
             "$LB_BINARY_ISO"
 
-          echo "=== ISO invocation line after patch ==="
-          grep -n 'genisoimage\b.*\${GENISOIMAGE_OPTIONS' "$LB_BINARY_ISO" || echo "(not found)"
-          echo "=== Also check what genisoimage actually is ==="
-          file /usr/bin/genisoimage || true
-          ls -la /usr/bin/genisoimage || true
+          echo "=== genisoimage/mkisofs lines after patch ==="
+          grep -n 'genisoimage\|mkisofs' "$LB_BINARY_ISO" || echo "(not found)"
+          echo "=== What is genisoimage? ==="
+          file /usr/bin/genisoimage 2>/dev/null || echo "not yet installed"
+          genisoimage --version 2>&1 | head -2 || echo "cannot run genisoimage yet"
 
       - name: Configure and Build ISO
         run: |
