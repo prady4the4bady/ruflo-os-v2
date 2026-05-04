@@ -32,53 +32,32 @@ jobs:
           mkdir -p installer/live-build-config/config/bootstrap_keyrings
           cp /usr/share/keyrings/debian-archive-keyring.gpg installer/live-build-config/config/bootstrap_keyrings/
 
-      - name: Install ISO tool wrappers
+      - name: Patch live-build binary_iso script for large squashfs
         run: |
-          # Place wrappers in /usr/local/bin, which appears before /usr/bin in both
-          # the default PATH and sudo's secure_path (/usr/local/bin:/usr/bin:...).
-          # When live-build calls genisoimage (or sudo genisoimage), our wrapper is
-          # found first and always injects -allow-limited-size before forwarding.
-          printf '%s\n' '#!/bin/sh' 'exec /usr/bin/genisoimage -allow-limited-size "$@"' \
-            | sudo tee /usr/local/bin/genisoimage > /dev/null
-          printf '%s\n' '#!/bin/sh' 'exec /usr/bin/mkisofs -allow-limited-size "$@"' \
-            | sudo tee /usr/local/bin/mkisofs > /dev/null
-          # xorrisofs (xorriso) handles large files natively via Rock Ridge — no wrapper needed
-          sudo chmod +x /usr/local/bin/genisoimage /usr/local/bin/mkisofs
-          echo "Wrappers installed:"
-          cat /usr/local/bin/genisoimage
-          cat /usr/local/bin/mkisofs
-
-      - name: Patch live-build binary_iso script
-        run: |
-          # The live-build ISO builder is at a known path (lb_ prefix, confirmed by
-          # dpkg -L live-build).  Patch it directly so -allow-limited-size is always
-          # passed when genisoimage / mkisofs is invoked, regardless of PATH tricks.
+          # On Ubuntu 24.04, /usr/bin/genisoimage is xorriso in genisoimage emulation mode.
+          # xorriso does NOT accept -allow-limited-size (a genisoimage-only flag).
+          # xorriso handles files >4GiB natively via ISO 9660 level 3 (-iso-level 3).
+          # Patch lb_binary_iso to add -iso-level 3 to the genisoimage invocation line.
           LB_BINARY_ISO="/usr/lib/live/build/lb_binary_iso"
 
-          echo "=== live-build binary scripts ==="
-          dpkg -L live-build 2>/dev/null | grep -E '/build/lb_' | sort || true
-
           if [ ! -f "$LB_BINARY_ISO" ]; then
-            echo "WARNING: $LB_BINARY_ISO not found — trying find fallback"
             LB_BINARY_ISO=$(find /usr -name 'lb_binary_iso' 2>/dev/null | head -1)
           fi
 
-          if [ -n "$LB_BINARY_ISO" ] && [ -f "$LB_BINARY_ISO" ]; then
-            echo "=== Before patch (genisoimage/mkisofs lines in $LB_BINARY_ISO) ==="
-            grep -n 'genisoimage\|mkisofs\|xorrisofs\|allow-limited' "$LB_BINARY_ISO" || echo "(none)"
+          echo "Using: $LB_BINARY_ISO"
+          echo "=== ISO invocation line before patch ==="
+          grep -n 'genisoimage\b.*\${GENISOIMAGE_OPTIONS' "$LB_BINARY_ISO" || echo "(not found)"
 
-            # xorrisofs handles large files natively; only patch genisoimage/mkisofs
-            sudo sed -i \
-              -e 's/genisoimage /genisoimage -allow-limited-size /g' \
-              -e 's/mkisofs /mkisofs -allow-limited-size /g' \
-              "$LB_BINARY_ISO"
+          # Patch: insert -iso-level 3 right after the genisoimage command on the invocation line
+          sudo sed -i \
+            's|^genisoimage \${GENISOIMAGE_OPTIONS}|genisoimage -iso-level 3 ${GENISOIMAGE_OPTIONS}|' \
+            "$LB_BINARY_ISO"
 
-            echo "=== After patch ==="
-            grep -n 'genisoimage\|mkisofs\|xorrisofs\|allow-limited' "$LB_BINARY_ISO" || echo "(none)"
-            echo "PATCHED: $LB_BINARY_ISO"
-          else
-            echo "ERROR: lb_binary_iso not found anywhere — relying solely on /usr/local/bin wrappers"
-          fi
+          echo "=== ISO invocation line after patch ==="
+          grep -n 'genisoimage\b.*\${GENISOIMAGE_OPTIONS' "$LB_BINARY_ISO" || echo "(not found)"
+          echo "=== Also check what genisoimage actually is ==="
+          file /usr/bin/genisoimage || true
+          ls -la /usr/bin/genisoimage || true
 
       - name: Configure and Build ISO
         run: |
