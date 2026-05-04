@@ -67,7 +67,7 @@ jobs:
             --mode debian \
             --distribution bookworm \
             --architecture amd64 \
-            --binary-images iso-hybrid \
+            --binary-images iso \
             --bootloader grub \
             --debian-installer false \
             --archive-areas "main contrib non-free non-free-firmware" \
@@ -82,7 +82,7 @@ jobs:
 
       - name: Find and rename ISO
         run: |
-          ISO=$(find installer/live-build-config -name "*.hybrid.iso" | head -1)
+          ISO=$(find installer/live-build-config -name "*.iso" | head -1)
           if [ -z "$ISO" ]; then
             echo "ERROR: ISO not found."
             exit 1
