@@ -13,7 +13,21 @@ jobs:
       - name: Install live-build
         run: |
           sudo apt-get update
-          sudo apt-get install -y live-build debootstrap rsync xorriso grub-pc-bin grub-efi-amd64-bin
+          sudo apt-get install -y live-build debootstrap rsync xorriso grub-pc-bin grub-efi-amd64-bin isolinux syslinux-common
+
+      - name: Stage syslinux assets
+        run: |
+          # The Ubuntu live-build lb_binary_syslinux script expects syslinux files at /root/isolinux/.
+          # Pre-populate that directory from the installed Ubuntu packages so the build doesn't fail.
+          sudo mkdir -p /root/isolinux
+          # isolinux.bin comes from the isolinux package
+          sudo find /usr/lib/ISOLINUX /usr/lib/syslinux -name "isolinux.bin" 2>/dev/null \
+            | head -1 | xargs -I{} sudo cp {} /root/isolinux/
+          # vesamenu.c32 and other modules come from syslinux-common
+          sudo find /usr/lib/syslinux -name "*.c32" 2>/dev/null \
+            | xargs -I{} sudo cp {} /root/isolinux/
+          echo "Staged files in /root/isolinux/:"
+          ls /root/isolinux/
 
       - name: Build ISO
         working-directory: iso-build
