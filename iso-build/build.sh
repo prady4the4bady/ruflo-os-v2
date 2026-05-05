@@ -58,11 +58,11 @@ lb config \
   --binary-images iso-hybrid \
   --debian-installer false \
   --archive-areas "main contrib non-free non-free-firmware" \
-  --mirror-bootstrap "http://deb.debian.org/debian/" \
-  --mirror-chroot "http://deb.debian.org/debian/" \
-  --mirror-chroot-security "http://deb.debian.org/debian-security/" \
-  --mirror-binary "http://deb.debian.org/debian/" \
-  --mirror-binary-security "http://deb.debian.org/debian-security/" \
+  --mirror-bootstrap "http://deb.debian.org/debian" \
+  --mirror-chroot "http://deb.debian.org/debian" \
+  --mirror-chroot-security "http://deb.debian.org/debian-security" \
+  --mirror-binary "http://deb.debian.org/debian" \
+  --mirror-binary-security "http://deb.debian.org/debian-security" \
   --security false \
   --bootappend-live "boot=live components quiet splash" \
   --initramfs live-boot \
