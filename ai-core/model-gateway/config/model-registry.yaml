@@ -1,0 +1,87 @@
+# Model Registry
+# Each model entry declares its capabilities, privacy level, and latency profile.
+# privacy_level: private (stays on device) | internal (on-prem) | cloud (leaves network)
+# latency_profile: fast (<500ms) | medium (500ms-2s) | slow (>2s)
+# capabilities: chat | completion | embeddings | function_calling | vision | code
+
+models:
+  # --- Local / Ollama models ---
+  - id: llama3.2:3b
+    provider: ollama
+    capabilities: [chat, completion]
+    privacy_level: private
+    latency_profile: fast
+
+  - id: llama3.2:1b
+    provider: ollama
+    capabilities: [chat, completion]
+    privacy_level: private
+    latency_profile: fast
+
+  - id: llama3.1:8b
+    provider: ollama
+    capabilities: [chat, completion, code]
+    privacy_level: private
+    latency_profile: medium
+
+  - id: mistral:7b
+    provider: ollama
+    capabilities: [chat, completion, code]
+    privacy_level: private
+    latency_profile: medium
+
+  - id: codellama:7b
+    provider: ollama
+    capabilities: [chat, completion, code]
+    privacy_level: private
+    latency_profile: medium
+
+  - id: nomic-embed-text
+    provider: ollama
+    capabilities: [embeddings]
+    privacy_level: private
+    latency_profile: fast
+
+  # --- OpenAI cloud models ---
+  - id: gpt-4o
+    provider: openai
+    capabilities: [chat, completion, function_calling, vision, code]
+    privacy_level: cloud
+    latency_profile: medium
+
+  - id: gpt-4o-mini
+    provider: openai
+    capabilities: [chat, completion, function_calling, code]
+    privacy_level: cloud
+    latency_profile: fast
+
+  - id: gpt-3.5-turbo
+    provider: openai
+    capabilities: [chat, completion]
+    privacy_level: cloud
+    latency_profile: fast
+
+  - id: text-embedding-ada-002
+    provider: openai
+    capabilities: [embeddings]
+    privacy_level: cloud
+    latency_profile: fast
+
+  # --- Anthropic cloud models ---
+  - id: claude-3-5-sonnet-20241022
+    provider: anthropic
+    capabilities: [chat, completion, vision, code]
+    privacy_level: cloud
+    latency_profile: medium
+
+  - id: claude-3-5-haiku-20241022
+    provider: anthropic
+    capabilities: [chat, completion, code]
+    privacy_level: cloud
+    latency_profile: fast
+
+  - id: claude-3-opus-20240229
+    provider: anthropic
+    capabilities: [chat, completion, vision, code]
+    privacy_level: cloud
+    latency_profile: slow

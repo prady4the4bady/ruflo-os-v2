@@ -1,0 +1,18 @@
+app_name: Prady
+logo_text: N
+theme: dark
+dock_autohide_delay_ms: 1200
+orchestration_url: http://127.0.0.1:11431
+pinned_apps:
+  - name: Firefox
+    exec: firefox
+    icon: web-browser
+  - name: Files
+    exec: nautilus
+    icon: folder
+  - name: Terminal
+    exec: gnome-terminal
+    icon: utilities-terminal
+  - name: Settings
+    exec: gnome-control-center
+    icon: preferences-system

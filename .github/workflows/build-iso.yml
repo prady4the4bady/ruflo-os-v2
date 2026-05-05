@@ -2,102 +2,26 @@ name: Build PradyOS ISO
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build-iso:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-        with:
-          submodules: false
 
-      - name: Install live-build tools
+      - name: Install live-build
         run: |
           sudo apt-get update
-          sudo apt-get install -y live-build debootstrap curl gpg grub-pc-bin grub-efi-amd64-bin xorriso syslinux-utils
+          sudo apt-get install -y live-build debootstrap rsync xorriso grub-pc-bin grub-efi-amd64-bin
 
-      - name: Fix Debian Keyring
-        run: |
-          sudo mkdir -p /usr/share/keyrings
-          curl -fsSL https://ftp-master.debian.org/keys/release-12.asc | sudo gpg --dearmor > deb12.gpg
-          curl -fsSL https://ftp-master.debian.org/keys/archive-key-12.asc | sudo gpg --dearmor > deb12-archive.gpg
-          cat deb12.gpg deb12-archive.gpg | sudo tee /usr/share/keyrings/debian-archive-keyring.gpg > /dev/null
-          mkdir -p installer/live-build-config/config/bootstrap_keyrings
-          cp /usr/share/keyrings/debian-archive-keyring.gpg installer/live-build-config/config/bootstrap_keyrings/
-
-      - name: Patch live-build binary_iso script for large squashfs
-        run: |
-          # Real genisoimage (9:1.1.11-3.4) is used by live-build and requires
-          # -allow-limited-size for files >4GiB. Patch lb_binary_iso directly.
-          LB_BINARY_ISO="/usr/lib/live/build/lb_binary_iso"
-
-          if [ ! -f "$LB_BINARY_ISO" ]; then
-            LB_BINARY_ISO=$(find /usr -name 'lb_binary_iso' 2>/dev/null | head -1)
-          fi
-
-          echo "Using: $LB_BINARY_ISO"
-          echo "=== genisoimage/mkisofs lines before patch ==="
-          grep -n 'genisoimage\|mkisofs' "$LB_BINARY_ISO" || echo "(not found)"
-
-          # Patch: add -allow-limited-size after genisoimage/mkisofs (no ^ anchor — lines may be indented)
-          sudo sed -i \
-            -e 's/genisoimage \${GENISOIMAGE_OPTIONS}/genisoimage -allow-limited-size ${GENISOIMAGE_OPTIONS}/g' \
-            -e 's/mkisofs \${GENISOIMAGE_OPTIONS}/mkisofs -allow-limited-size ${GENISOIMAGE_OPTIONS}/g' \
-            "$LB_BINARY_ISO"
-
-          echo "=== genisoimage/mkisofs lines after patch ==="
-          grep -n 'genisoimage\|mkisofs' "$LB_BINARY_ISO" || echo "(not found)"
-          echo "=== What is genisoimage? ==="
-          file /usr/bin/genisoimage 2>/dev/null || echo "not yet installed"
-          genisoimage --version 2>&1 | head -2 || echo "cannot run genisoimage yet"
-
-      - name: Configure and Build ISO
-        run: |
-          cd installer/live-build-config
-          chmod +x auto/config
-          sudo lb clean --all
-          sudo lb config \
-            --mode debian \
-            --distribution bookworm \
-            --architecture amd64 \
-            --binary-images iso \
-            --bootloader grub \
-            --debian-installer false \
-            --archive-areas "main contrib non-free non-free-firmware" \
-            --mirror-bootstrap "http://deb.debian.org/debian" \
-            --mirror-chroot "http://deb.debian.org/debian" \
-            --mirror-binary "http://deb.debian.org/debian" \
-            --apt-indices false \
-            --linux-packages none
-          set -o pipefail
-          sudo lb build 2>&1 | tee /tmp/lb-build.log
-        timeout-minutes: 100
-
-      - name: Find and rename ISO
-        run: |
-          ISO=$(find installer/live-build-config -name "*.iso" | head -1)
-          if [ -z "$ISO" ]; then
-            echo "ERROR: ISO not found."
-            exit 1
-          fi
-          cp "$ISO" prady-os-1.0-amd64.iso
+      - name: Build ISO
+        working-directory: iso-build
+        run: make build
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v7
         with:
           name: prady-os-iso
-          path: prady-os-1.0-amd64.iso
-
-      - name: Upload build log on failure
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: build-log
-          path: /tmp/lb-build.log
+          path: iso-build/prady-os.iso
+          retention-days: 7

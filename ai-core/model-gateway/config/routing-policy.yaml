@@ -1,0 +1,26 @@
+# Routing Policy Configuration
+# mode: local-first | local-only | cloud-only
+mode: local-first
+
+# How long (seconds) to wait for Ollama before declaring it unavailable
+local_timeout_seconds: 10
+
+providers:
+  ollama:
+    base_url: "http://localhost:11434"
+    timeout_seconds: 10
+
+  openai:
+    base_url: "https://api.openai.com/v1"
+    env_key: OPENAI_API_KEY
+    timeout_seconds: 60
+
+  anthropic:
+    base_url: "https://api.anthropic.com/v1"
+    env_key: ANTHROPIC_API_KEY
+    timeout_seconds: 60
+
+# Order to try cloud providers when falling back from local
+fallback_order:
+  - openai
+  - anthropic

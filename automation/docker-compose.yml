@@ -1,0 +1,71 @@
+services:
+  screen-operator:
+    build: ./screen-operator
+    container_name: screen-operator
+    ports:
+      - "11431:8000"
+    environment:
+      ACTIONS_LOG_PATH: /app/logs/actions.jsonl
+      DISPLAY: ${DISPLAY:-}
+      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-}
+      XDG_RUNTIME_DIR: ${XDG_RUNTIME_DIR:-}
+    volumes:
+      - ./screen-operator/logs:/app/logs
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    restart: unless-stopped
+
+  playwright-runner:
+    build: ./playwright-runner
+    container_name: playwright-runner
+    ports:
+      - "11432:3000"
+    restart: unless-stopped
+
+  screen-agent:
+    build: ./screen-agent
+    container_name: screen-agent
+    ports:
+      - "11433:8000"
+    environment:
+      MODEL_GATEWAY_URL: ${MODEL_GATEWAY_URL:-http://model-gateway:8000}
+      WORKFLOW_ENGINE_URL: ${WORKFLOW_ENGINE_URL:-http://workflow-engine:8000}
+      ACTION_POLICY: ${ACTION_POLICY:-}
+      DISPLAY: ${DISPLAY:-}
+      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-}
+      XDG_RUNTIME_DIR: ${XDG_RUNTIME_DIR:-}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/screenshots:/tmp/screenshots
+    restart: unless-stopped
+
+  desktop-shell:
+    build: ../desktop/aqua-shell
+    container_name: desktop-shell
+    ports:
+      - "11435:11435"
+    environment:
+      MODEL_GATEWAY_URL: ${MODEL_GATEWAY_URL:-http://model-gateway:11430}
+      WORKFLOW_ENGINE_URL: ${WORKFLOW_ENGINE_URL:-http://workflow-engine:8001}
+      DISPLAY: ${DISPLAY:-}
+      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-}
+      XDG_RUNTIME_DIR: ${XDG_RUNTIME_DIR:-}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /run/user:/run/user:rw
+      - ${HOME:-/root}/.prady:/root/.prady:ro
+    restart: unless-stopped
+
+  lumyn:
+    build: ../agents/lumyn
+    container_name: lumyn
+    ports:
+      - "11436:11436"
+    environment:
+      MODEL_GATEWAY_URL: ${MODEL_GATEWAY_URL:-http://model-gateway:11430}
+      WORKFLOW_ENGINE_URL: ${WORKFLOW_ENGINE_URL:-http://workflow-engine:8001}
+      SCREEN_AGENT_URL: ${SCREEN_AGENT_URL:-http://screen-agent:8000}
+      LUMYN_PORT: "11436"
+    volumes:
+      - ../agents/lumyn/config:/app/config
+      - ../agents/lumyn/data:/app/data
+    restart: unless-stopped

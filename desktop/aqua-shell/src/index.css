@@ -1,0 +1,324 @@
+/* ── CSS Custom Properties ──────────────────────────────────────────────── */
+
+:root {
+  /* SF Pro font stack with system-ui fallback */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* Aqua glass palette – light mode defaults */
+  --glass-bg:         rgba(255, 255, 255, 0.72);
+  --glass-border:     rgba(255, 255, 255, 0.5);
+  --glass-shadow:     0 4px 32px rgba(0, 0, 0, 0.18);
+  --glass-blur:       20px;
+
+  --text-primary:     rgba(0, 0, 0, 0.88);
+  --text-secondary:   rgba(0, 0, 0, 0.55);
+  --accent:           #007AFF;
+
+  --menubar-height:   28px;
+  --dock-height:      72px;
+  --dock-icon-size:   52px;
+  --notif-width:      320px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --glass-bg:       rgba(28, 28, 30, 0.75);
+    --glass-border:   rgba(255, 255, 255, 0.12);
+    --glass-shadow:   0 4px 32px rgba(0, 0, 0, 0.45);
+    --text-primary:   rgba(255, 255, 255, 0.92);
+    --text-secondary: rgba(255, 255, 255, 0.55);
+  }
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* ── Desktop container ──────────────────────────────────────────────────── */
+
+.desktop {
+  position: fixed;
+  inset: 0;
+  /* fallback gradient when no wallpaper is set */
+  background: linear-gradient(135deg, #1c1c3e 0%, #2d1b69 50%, #11111b 100%);
+}
+
+/* ── Frosted-glass mixin (utility class) ────────────────────────────────── */
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* ── Menu bar ────────────────────────────────────────────────────────────── */
+
+.menubar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--menubar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  z-index: 9000;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.menubar__left,
+.menubar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── AI status dot ───────────────────────────────────────────────────────── */
+
+.ai-status { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.ai-status__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.ai-status__dot--healthy  { background: #34C759; box-shadow: 0 0 6px #34C75988; }
+.ai-status__dot--degraded { background: #FF9500; box-shadow: 0 0 6px #FF950088; }
+.ai-status__dot--down     { background: #FF3B30; box-shadow: 0 0 6px #FF3B3088; }
+
+.ai-panel {
+  position: absolute;
+  top: calc(var(--menubar-height) + 6px);
+  left: 8px;
+  min-width: 220px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  z-index: 9100;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ai-panel__row { display: flex; justify-content: space-between; }
+.ai-panel__label { color: var(--text-secondary); }
+
+/* ── Dock ─────────────────────────────────────────────────────────────────── */
+
+.dock-wrapper {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8000;
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.dock {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: var(--dock-height);
+}
+
+.dock-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* bottom-aligned */
+  align-self: flex-end;
+}
+
+.dock-item__icon {
+  width: var(--dock-icon-size);
+  height: var(--dock-icon-size);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  background: var(--glass-bg);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dock-item__label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  opacity: 0;
+  transition: opacity 0.1s;
+  white-space: nowrap;
+}
+
+.dock-item:hover .dock-item__label { opacity: 1; }
+
+/* Magnification – primary hover */
+.dock-item:hover .dock-item__icon {
+  transform: scale(1.42) translateY(-8px);
+}
+
+/* Magnification – adjacent items */
+.dock-item:has(+ .dock-item:hover) .dock-item__icon,
+.dock-item:hover + .dock-item .dock-item__icon {
+  transform: scale(1.2) translateY(-4px);
+}
+
+/* Running indicator dot */
+.dock-item__running {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Bounce animation on launch */
+@keyframes dock-bounce {
+  0%, 100% { transform: scale(1.42) translateY(-8px); }
+  50%       { transform: scale(1.42) translateY(-24px); }
+}
+.dock-item--bouncing .dock-item__icon {
+  animation: dock-bounce 0.5s ease-in-out 3;
+}
+
+/* ── Spotlight ────────────────────────────────────────────────────────────── */
+
+.spotlight-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 20vh;
+  z-index: 9500;
+}
+
+.spotlight {
+  width: 580px;
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.spotlight__input {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 20px;
+  font-family: var(--font-sans);
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+}
+
+.spotlight__input::placeholder { color: var(--text-secondary); }
+
+/* ── Command bar ─────────────────────────────────────────────────────────── */
+
+.cmdbar-wrapper {
+  position: fixed;
+  top: var(--menubar-height);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  z-index: 9200;
+  border-radius: 0 0 14px 14px;
+  overflow: hidden;
+  animation: slide-down 0.2s ease-out;
+}
+
+@keyframes slide-down {
+  from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+
+.cmdbar__input-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  gap: 10px;
+}
+
+.cmdbar__prefix { font-size: 13px; color: var(--accent); font-weight: 600; }
+
+.cmdbar__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+}
+
+.cmdbar__status {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 14px 10px;
+}
+
+/* ── Notifications ────────────────────────────────────────────────────────── */
+
+.notif-queue {
+  position: fixed;
+  top: calc(var(--menubar-height) + 10px);
+  right: 14px;
+  z-index: 9300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.notif-toast {
+  width: var(--notif-width);
+  border-radius: 12px;
+  padding: 12px 14px;
+  pointer-events: all;
+  cursor: pointer;
+  animation: notif-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+@keyframes notif-in {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}
+
+.notif-toast--exiting {
+  transform: translateX(120%);
+  opacity: 0;
+}
+
+.notif-toast__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.notif-toast__title { font-size: 13px; font-weight: 600; }
+.notif-toast__body  { font-size: 12px; color: var(--text-secondary); }
+.notif-toast__close {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-secondary); font-size: 14px; padding: 0 2px;
+}
+
+/* ── Clock ───────────────────────────────────────────────────────────────── */
+
+.clock { font-size: 13px; font-weight: 500; letter-spacing: 0.01em; }

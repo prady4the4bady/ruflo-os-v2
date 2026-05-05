@@ -1,0 +1,1 @@
+"""Prady Desktop Shell package."""

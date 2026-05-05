@@ -1,0 +1,15 @@
+[Unit]
+Description=Prady Model Gateway
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/prady-os
+ExecStart=/usr/bin/docker compose -f /opt/prady-os/docker-compose.dev.yml up -d model-gateway
+ExecStop=/usr/bin/docker compose -f /opt/prady-os/docker-compose.dev.yml stop model-gateway
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

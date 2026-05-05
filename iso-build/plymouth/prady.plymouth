@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Prady
+Description=Prady OS boot splash theme
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/prady
+ScriptFile=/usr/share/plymouth/themes/prady/prady.script

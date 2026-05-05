@@ -1,0 +1,17 @@
+[Unit]
+Description=Prady Aqua Shell
+After=prady-model-gateway.service prady-workflow-engine.service prady-screen-agent.service prady-lumyn.service display-manager.service
+Wants=prady-model-gateway.service prady-workflow-engine.service prady-screen-agent.service prady-lumyn.service
+Requires=prady-lumyn.service
+
+[Service]
+Type=simple
+User=prady
+WorkingDirectory=/opt/prady-os
+Environment=DISPLAY=:0
+ExecStart=/usr/bin/bash -lc 'if [ -x /opt/prady-os/shell/prady-shell/start.sh ]; then exec /opt/prady-os/shell/prady-shell/start.sh; elif [ -x /opt/prady-os/desktop/aqua-shell/src-tauri/target/release/aqua-shell ]; then exec /opt/prady-os/desktop/aqua-shell/src-tauri/target/release/aqua-shell; else exec /usr/bin/sleep infinity; fi'
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=Prady Screen Agent
+After=network-online.target docker.service prady-workflow-engine.service
+Wants=network-online.target docker.service prady-workflow-engine.service
+Requires=prady-workflow-engine.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/prady-os
+ExecStart=/usr/bin/docker compose -f /opt/prady-os/docker-compose.dev.yml up -d screen-agent
+ExecStop=/usr/bin/docker compose -f /opt/prady-os/docker-compose.dev.yml stop screen-agent
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

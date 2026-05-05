@@ -1,0 +1,65 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  model-gateway:
+    build:
+      context: ./ai-core/model-gateway
+    environment:
+      MG_LISTEN_HOST: 0.0.0.0
+      MG_PORT: "8000"
+      MG_REGISTRY_PATH: /app/config/model-registry.yaml
+      MG_POLICY_PATH: /app/config/routing-policy.yaml
+    ports:
+      - "11430:8000"
+    volumes:
+      - ./ai-core/model-gateway/config:/app/config:ro
+    restart: unless-stopped
+
+  playwright-runner:
+    build:
+      context: ./automation/playwright-runner
+    environment:
+      PORT: "3000"
+      HEADLESS: "true"
+    restart: unless-stopped
+
+  workflow-engine:
+    build:
+      context: ./orchestration/workflow-engine
+    depends_on:
+      - redis
+      - model-gateway
+      - playwright-runner
+    environment:
+      REDIS_URL: redis://redis:6379
+      MODEL_GATEWAY_URL: http://model-gateway:8000
+      PLAYWRIGHT_RUNNER_URL: http://playwright-runner:3000
+      GATEWAY_MODEL: llama3.2:3b
+      ACTIVITY_LOG_DIR: /app/logs
+      HOME: /workspace-home
+    ports:
+      - "11431:8000"
+    volumes:
+      - ./orchestration/workflow-engine/logs:/app/logs
+      - ${HOME}/Desktop:/workspace-home/Desktop
+    restart: unless-stopped
+
+  model-manager:
+    build:
+      context: ./platform/model-manager
+    command: ["python", "-m", "prady_models.cli", "serve", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      MODEL_REGISTRY_PATH: /workspace/ai-core/model-gateway/config/model-registry.yaml
+      ROUTING_POLICY_PATH: /workspace/ai-core/model-gateway/config/routing-policy.yaml
+      STAGING_ROOT: /workspace/.cache/model-manager/staging
+      BACKUP_ROOT: /workspace/.cache/model-manager/backups
+      AUDIT_LOG_PATH: /workspace/.cache/model-manager/audit/audit.log
+    ports:
+      - "11432:8000"
+    volumes:
+      - ./:/workspace
+    restart: unless-stopped

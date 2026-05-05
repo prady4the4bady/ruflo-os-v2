@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+if [ -r /etc/profile ]; then
+  . /etc/profile
+fi
+
+openbox-session &
+
+if [ -x /opt/prady-os/shell/prady-shell/start.sh ]; then
+  exec /opt/prady-os/shell/prady-shell/start.sh
+fi
+
+if [ -x /opt/prady-os/desktop/aqua-shell/src-tauri/target/release/aqua-shell ]; then
+  exec /opt/prady-os/desktop/aqua-shell/src-tauri/target/release/aqua-shell
+fi
+
+if [ -x /usr/bin/bash ] && [ -f /opt/prady-os/desktop/aqua-shell/package.json ]; then
+  exec /usr/bin/bash -lc 'cd /opt/prady-os/desktop/aqua-shell && npm run tauri dev'
+fi
+
+exec /usr/bin/xterm

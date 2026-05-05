@@ -1,0 +1,5 @@
+max_iterations: 10
+model_preference: "local-first"
+auto_approve_safe_actions: true
+memory_enabled: true
+learning_enabled: true

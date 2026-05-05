@@ -1,0 +1,3 @@
+PRADY_VERSION=0.1.0
+PRADY_CODENAME=caveman
+BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)

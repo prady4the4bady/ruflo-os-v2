@@ -1,0 +1,29 @@
+services:
+  model-gateway:
+    build: .
+    ports:
+      - "11430:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GATEWAY_CONFIG_DIR=/app/config
+      - GATEWAY_LOG_DIR=/app/logs
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    profiles:
+      - full
+    restart: unless-stopped
+
+volumes:
+  ollama_data:

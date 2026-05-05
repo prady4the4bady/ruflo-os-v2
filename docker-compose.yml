@@ -1,0 +1,159 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - prady-net
+
+  model-gateway:
+    build:
+      context: ./ai-core/model-gateway
+    restart: unless-stopped
+    ports:
+      - "11430:8000"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      GATEWAY_ROUTING_MODE: ${GATEWAY_ROUTING_MODE:-local-first}
+      GATEWAY_CONFIG_DIR: ${GATEWAY_CONFIG_DIR:-/app/config}
+      GATEWAY_LOG_DIR: ${GATEWAY_LOG_DIR:-/app/logs}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    volumes:
+      - ./ai-core/model-gateway/config:/app/config:ro
+      - ./ai-core/model-gateway/logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3).getcode()==200 else sys.exit(1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - prady-net
+
+  workflow-engine:
+    build:
+      context: ./orchestration/workflow-engine
+    restart: unless-stopped
+    ports:
+      - "11431:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      model-gateway:
+        condition: service_healthy
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      MODEL_GATEWAY_URL: ${MODEL_GATEWAY_URL:-http://model-gateway:8000}
+      PLAYWRIGHT_RUNNER_URL: ${PLAYWRIGHT_RUNNER_URL:-http://host.docker.internal:11432}
+      GATEWAY_MODEL: ${GATEWAY_MODEL:-llama3.2:3b}
+      ACTIVITY_LOG_DIR: ${ACTIVITY_LOG_DIR:-/app/logs}
+      APPROVAL_TIMEOUT_SECONDS: ${APPROVAL_TIMEOUT_SECONDS:-300}
+    volumes:
+      - ./orchestration/workflow-engine/logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3).getcode()==200 else sys.exit(1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - prady-net
+
+  screen-agent:
+    build:
+      context: ./automation/screen-agent
+    restart: unless-stopped
+    ports:
+      - "11433:8000"
+    depends_on:
+      workflow-engine:
+        condition: service_healthy
+    environment:
+      MODEL_GATEWAY_URL: ${SCREEN_AGENT_MODEL_GATEWAY_URL:-http://model-gateway:8000}
+      WORKFLOW_ENGINE_URL: ${WORKFLOW_ENGINE_URL:-http://workflow-engine:8000}
+      ACTION_POLICY: ${ACTION_POLICY:-}
+      POLICY_TIMEOUT_SECS: ${POLICY_TIMEOUT_SECS:-5}
+      VISION_MODEL: ${VISION_MODEL:-vision}
+      VISION_TIMEOUT_SECS: ${VISION_TIMEOUT_SECS:-30}
+      DISPLAY: ${DISPLAY:-}
+      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-}
+      XDG_RUNTIME_DIR: ${XDG_RUNTIME_DIR:-}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/screenshots:/tmp/screenshots
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8000/openapi.json', timeout=3).getcode()==200 else sys.exit(1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - prady-net
+
+  lumyn:
+    build:
+      context: ./agents/lumyn
+    restart: unless-stopped
+    ports:
+      - "11436:11436"
+    depends_on:
+      screen-agent:
+        condition: service_healthy
+    environment:
+      MODEL_GATEWAY_URL: ${LUMYN_MODEL_GATEWAY_URL:-http://model-gateway:8000}
+      WORKFLOW_ENGINE_URL: ${LUMYN_WORKFLOW_ENGINE_URL:-http://workflow-engine:8000}
+      SCREEN_AGENT_URL: ${SCREEN_AGENT_URL:-http://screen-agent:8000}
+      LUMYN_HOST: ${LUMYN_HOST:-0.0.0.0}
+      LUMYN_PORT: ${LUMYN_PORT:-11436}
+      LUMYN_CHROMA_PATH: ${LUMYN_CHROMA_PATH:-/app/data/chroma}
+      LUMYN_LEARNINGS_FILE: ${LUMYN_LEARNINGS_FILE:-/app/config/agent-learnings.jsonl}
+    volumes:
+      - ./agents/lumyn/config:/app/config
+      - ./agents/lumyn/data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:11436/openapi.json', timeout=3).getcode()==200 else sys.exit(1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - prady-net
+
+  aqua-shell:
+    build:
+      context: ./desktop/aqua-shell
+    restart: unless-stopped
+    ports:
+      - "11435:11435"
+    depends_on:
+      lumyn:
+        condition: service_healthy
+    environment:
+      MODEL_GATEWAY_URL: ${AQUA_MODEL_GATEWAY_URL:-http://model-gateway:8000}
+      WORKFLOW_ENGINE_URL: ${AQUA_WORKFLOW_ENGINE_URL:-http://workflow-engine:8000}
+      DISPLAY: ${DISPLAY:-}
+      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-}
+      XDG_RUNTIME_DIR: ${XDG_RUNTIME_DIR:-}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /run/user:/run/user:rw
+      - ${HOME:-/root}/.prady:/root/.prady:ro
+    healthcheck:
+      test: ["CMD-SHELL", "grep -aq aqua-shell /proc/1/cmdline"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - prady-net
+
+networks:
+  prady-net:
+    name: prady-net

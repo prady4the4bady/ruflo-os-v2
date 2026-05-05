@@ -1,0 +1,37 @@
+name: E2E
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  e2e-hn-task:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Ensure desktop directory
+        run: mkdir -p "$HOME/Desktop"
+
+      - name: Start stack
+        run: make dev-up
+
+      - name: Run E2E test headless
+        run: xvfb-run -a make test-e2e
+
+      - name: Dump service logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.dev.yml logs --no-color
+
+      - name: Teardown stack
+        if: always()
+        run: make dev-down

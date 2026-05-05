@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prady Model Manager</title>
+  <style>
+    body { font-family: "Inter", sans-serif; margin: 0; background: #0b1220; color: #e5e7eb; }
+    .page { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+    .row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .card { background: #111827; border: 1px solid #1f2937; border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+    .grow { flex: 1 1 340px; }
+    .btn { background: #2563eb; color: white; border: none; border-radius: 9px; padding: 8px 12px; cursor: pointer; }
+    .btn.danger { background: #b91c1c; }
+    input, select { width: 100%; padding: 8px; margin: 4px 0 10px; border-radius: 8px; border: 1px solid #334155; background: #020617; color: #e5e7eb; }
+    .meta { color: #94a3b8; font-size: 13px; }
+    .chips span { display: inline-block; margin-right: 6px; background: #1e293b; border-radius: 999px; padding: 2px 8px; font-size: 12px; }
+    #result { white-space: pre-wrap; background: #020617; padding: 10px; border-radius: 8px; border: 1px solid #334155; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Prady Model Manager</h1>
+
+    <div class="card">
+      <h2>Routing Policy Editor</h2>
+      <form id="routing-form">
+        <label>Mode</label>
+        <select name="mode">
+          <option value="local-first" {% if routing.mode == 'local-first' %}selected{% endif %}>local-first</option>
+          <option value="local-only" {% if routing.mode == 'local-only' %}selected{% endif %}>local-only</option>
+          <option value="cloud-only" {% if routing.mode == 'cloud-only' %}selected{% endif %}>cloud-only</option>
+        </select>
+        <label>Fallback providers (comma separated)</label>
+        <input name="fallback_order" value="{{ routing.fallback_order | join(', ') }}" />
+        <button class="btn" type="submit">Save Policy</button>
+      </form>
+    </div>
+
+    <div class="row">
+      <div class="card grow">
+        <h2>Install from Hugging Face</h2>
+        <form id="hf-form">
+          <label>HF Repo</label>
+          <input name="hf_repo" placeholder="TheBloke/Mistral-7B-Instruct-v0.2-GGUF" required />
+          <label>File</label>
+          <input name="file_name" placeholder="mistral-7b-instruct-v0.2.Q4_K_M.gguf" required />
+          <label>SHA256 (optional)</label>
+          <input name="sha256" />
+          <button class="btn" type="submit">Install</button>
+        </form>
+      </div>
+
+      <div class="card grow">
+        <h2>Install from GitHub</h2>
+        <form id="gh-form">
+          <label>GitHub URL</label>
+          <input name="github_url" placeholder="https://github.com/org/repo/releases/download/v1/model.gguf" required />
+          <label>SHA256 (optional)</label>
+          <input name="sha256" />
+          <button class="btn" type="submit">Install</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Installed Models</h2>
+      {% for m in models %}
+      <div class="card">
+        <strong>{{ m.id }}</strong>
+        <div class="meta">{{ m.architecture or 'unknown' }} | {{ m.quantization or 'unknown' }} | ctx {{ m.context_length or 'unknown' }} | RAM ~ {{ m.ram_estimate_gb or '?' }} GB</div>
+        <div class="meta">status: {{ m.status or 'installed' }} | path: {{ m.file_path or '-' }}</div>
+        <div class="chips">
+          {% for c in m.capabilities or [] %}<span>{{ c }}</span>{% endfor %}
+        </div>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn danger" onclick="removeModel('{{ m.id }}')">Remove</button>
+          <button class="btn" onclick="setDefault('{{ m.id }}','chat')">Set Chat Default</button>
+          <button class="btn" onclick="setDefault('{{ m.id }}','coding')">Set Coding Default</button>
+          <button class="btn" onclick="setDefault('{{ m.id }}','vision')">Set Vision Default</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      <h2>Action Output</h2>
+      <div id="result">Ready.</div>
+    </div>
+  </div>
+
+<script>
+async function postForm(url, form) {
+  const fd = new FormData(form);
+  const r = await fetch(url, { method: 'POST', body: fd });
+  const data = await r.json();
+  document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+  if (data.ok) location.reload();
+}
+
+document.getElementById('hf-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  postForm('/api/install-hf', e.target);
+});
+
+document.getElementById('gh-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  postForm('/api/install-github', e.target);
+});
+
+document.getElementById('routing-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  postForm('/api/routing-policy', e.target);
+});
+
+async function removeModel(modelId) {
+  const r = await fetch('/api/remove/' + encodeURIComponent(modelId), { method: 'POST' });
+  const data = await r.json();
+  document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+  if (data.ok) location.reload();
+}
+
+async function setDefault(modelId, capability) {
+  const fd = new FormData();
+  fd.set('model_id', modelId);
+  fd.set('capability', capability);
+  const r = await fetch('/api/set-default', { method: 'POST', body: fd });
+  const data = await r.json();
+  document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+  if (data.ok) location.reload();
+}
+</script>
+</body>
+</html>

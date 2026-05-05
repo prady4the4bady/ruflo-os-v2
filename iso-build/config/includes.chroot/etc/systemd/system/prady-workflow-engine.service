@@ -1,0 +1,16 @@
+[Unit]
+Description=Prady Workflow Engine
+After=network-online.target docker.service prady-model-gateway.service
+Wants=network-online.target docker.service prady-model-gateway.service
+Requires=prady-model-gateway.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/prady-os
+ExecStart=/usr/bin/docker compose -f /opt/prady-os/docker-compose.dev.yml up -d workflow-engine
+ExecStop=/usr/bin/docker compose -f /opt/prady-os/docker-compose.dev.yml stop workflow-engine
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

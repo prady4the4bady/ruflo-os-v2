@@ -1,0 +1,16 @@
+[Unit]
+Description=Prady Lumyn
+After=network-online.target docker.service prady-screen-agent.service
+Wants=network-online.target docker.service prady-screen-agent.service
+Requires=prady-screen-agent.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/prady-os
+ExecStart=/usr/bin/docker compose -f /opt/prady-os/docker-compose.dev.yml up -d lumyn
+ExecStop=/usr/bin/docker compose -f /opt/prady-os/docker-compose.dev.yml stop lumyn
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target
