@@ -20,14 +20,13 @@ jobs:
           # The Ubuntu live-build lb_binary_syslinux script expects syslinux files at /root/isolinux/.
           # Pre-populate that directory from the installed Ubuntu packages so the build doesn't fail.
           sudo mkdir -p /root/isolinux
-          # isolinux.bin comes from the isolinux package
-          sudo find /usr/lib/ISOLINUX /usr/lib/syslinux -name "isolinux.bin" 2>/dev/null \
-            | head -1 | xargs -I{} sudo cp {} /root/isolinux/
-          # vesamenu.c32 and other modules come from syslinux-common
-          sudo find /usr/lib/syslinux -name "*.c32" 2>/dev/null \
-            | xargs -I{} sudo cp {} /root/isolinux/
+          # Copy isolinux.bin (from the isolinux package → /usr/lib/ISOLINUX/)
+          ISOLINUX_BIN=$(find /usr/lib/ISOLINUX /usr/lib/syslinux -name "isolinux.bin" 2>/dev/null | head -1)
+          [ -n "$ISOLINUX_BIN" ] && sudo cp "$ISOLINUX_BIN" /root/isolinux/
+          # Copy all .c32 modules (from syslinux-common → /usr/lib/syslinux/modules/bios/)
+          find /usr/lib/syslinux -name "*.c32" 2>/dev/null | while read f; do sudo cp "$f" /root/isolinux/; done
           echo "Staged files in /root/isolinux/:"
-          ls /root/isolinux/
+          sudo find /root/isolinux -type f -printf "%f\n"
 
       - name: Build ISO
         working-directory: iso-build
