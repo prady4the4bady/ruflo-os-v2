@@ -9,6 +9,7 @@ PROJECT_DST="${INCLUDES_DIR}/opt/prady-os"
 THEME_SRC="${SCRIPT_DIR}/plymouth"
 THEME_DST="${INCLUDES_DIR}/usr/share/plymouth/themes/prady"
 PRADY_RELEASE_FILE="${INCLUDES_DIR}/etc/prady/os-release"
+ISOLINUX_CHROOT_DIR="${INCLUDES_DIR}/root/isolinux"
 CONFIG_ONLY=0
 
 if [[ "${1:-}" == "--config-only" ]]; then
@@ -76,6 +77,7 @@ fi
 
 # live-build's syslinux stage may expect these files under /root/isolinux.
 mkdir -p /root/isolinux
+mkdir -p "${ISOLINUX_CHROOT_DIR}"
 
 find_first_existing() {
   for p in "$@"; do
@@ -106,6 +108,10 @@ fi
 
 cp -f "${ISOLINUX_BIN}" /root/isolinux/isolinux.bin
 cp -f "${VESAMENU_C32}" /root/isolinux/vesamenu.c32
+cp -f "${ISOLINUX_BIN}" "${ISOLINUX_CHROOT_DIR}/isolinux.bin"
+cp -f "${VESAMENU_C32}" "${ISOLINUX_CHROOT_DIR}/vesamenu.c32"
+
+ls -l "${ISOLINUX_CHROOT_DIR}"
 ls -l /root/isolinux
 
 lb build
