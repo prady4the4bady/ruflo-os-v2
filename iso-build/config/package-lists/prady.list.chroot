@@ -1,6 +1,7 @@
 xorg
 xdm
 openbox
+linux-image-amd64
 nitrogen
 kitty
 firefox-esr
