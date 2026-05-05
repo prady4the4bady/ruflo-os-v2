@@ -66,6 +66,15 @@ jobs:
           echo "Staged files in /root/isolinux/:"
           sudo find /root/isolinux -type f -printf "%f\n"
 
+      - name: Inject isolinux files into includes.binary
+        run: |
+          # Ensure genisoimage sees isolinux/boot catalog paths in the final image tree.
+          sudo mkdir -p iso-build/config/includes.binary/isolinux
+          sudo cp /root/isolinux/isolinux.bin iso-build/config/includes.binary/isolinux/
+          sudo cp /root/isolinux/vesamenu.c32 iso-build/config/includes.binary/isolinux/
+          sudo chown -R "$USER":"$USER" iso-build/config/includes.binary/isolinux
+          ls -l iso-build/config/includes.binary/isolinux
+
       - name: Build ISO
         working-directory: iso-build
         run: sudo make build
