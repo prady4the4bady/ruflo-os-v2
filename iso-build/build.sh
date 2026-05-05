@@ -67,8 +67,7 @@ lb config \
   --bootappend-live "boot=live components quiet splash" \
   --initramfs live-boot \
   --system normal \
-  --linux-flavours amd64 \
-  --apt-indices false
+  --linux-flavours amd64
 
 if [[ "${CONFIG_ONLY}" -eq 1 ]]; then
   echo "lb config completed. Skipping lb build (--config-only)."
