@@ -15,6 +15,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y live-build debootstrap rsync xorriso grub-pc-bin grub-efi-amd64-bin isolinux syslinux-common syslinux-utils
 
+      - name: Shim isohybrid (not needed for CI artifact)
+        run: |
+          # live-build calls isohybrid after genisoimage to create a hybrid-boot ISO.
+          # On Ubuntu 24.04 runners isohybrid is not available; shim it so build succeeds.
+          # The ISO itself is already a valid bootable image without this post-processing.
+          sudo tee /usr/local/bin/isohybrid > /dev/null << 'EOF'
+          #!/bin/sh
+          echo "isohybrid shim: ignoring hybrid conversion (CI only)"
+          exit 0
+          EOF
+          sudo chmod +x /usr/local/bin/isohybrid
+
       - name: Disable live-build syslinux stage
         run: |
           # Ubuntu's live-build fork invokes a syslinux stage that is brittle in CI.
