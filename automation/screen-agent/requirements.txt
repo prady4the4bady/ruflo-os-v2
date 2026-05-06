@@ -3,4 +3,4 @@ uvicorn[standard]==0.32.1
 pydantic==2.10.1
 httpx==0.27.2
 pynput==1.7.6
-python-xlib==0.34
+python-xlib==0.33
