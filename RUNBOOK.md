@@ -703,6 +703,368 @@ redis:
 
 ---
 
+## Degraded Modes & Recovery
+
+### Understanding Degraded Modes
+
+When one or more system components fail, Prady OS enters a "degraded mode" where:
+- Critical features remain functional (e.g., chat still works even without screen automation)
+- Non-critical features gracefully degrade (e.g., browser automation skipped if Playwright unavailable)
+- System continues serving with reduced capability
+- Logs clearly indicate which components are offline
+
+### Mode: Screen Agent Unavailable
+
+**When This Occurs:**
+- `screen-agent` fails to start (e.g., X11 display not available)
+- Container crashes repeatedly
+- DISPLAY environment variable not set
+
+**Symptoms:**
+- Desktop automation requests return HTTP 503
+- Browser automation requests fail with "screen-agent unhealthy"
+- Chat and task completion still work for non-visual tasks
+
+**Impact:**
+- ✅ Conversational AI: Works normally
+- ✅ Task orchestration: Works normally
+- ✅ Browser automation (Playwright): Works normally (depends on playwright-runner)
+- ❌ Desktop screenshots: Unavailable
+- ❌ Mouse/keyboard automation: Unavailable
+- ❌ GUI element detection: Unavailable
+
+**Recovery:**
+
+1. **On Linux (with X11):**
+   ```bash
+   # Start virtual display server if needed
+   Xvfb :1 -screen 0 1920x1080x24 &
+   
+   # Set DISPLAY and restart
+   export DISPLAY=:1
+   make restart
+   
+   # Verify
+   curl http://localhost:11433/healthz  # Should return 200 OK
+   ```
+
+2. **On Headless Systems:**
+   ```bash
+   # Accept that screen-agent will be unavailable
+   # All other services continue to work
+   # Use browser automation (Playwright) instead of desktop automation
+   ```
+
+### Mode: Model Gateway Fallback (Local Ollama → Cloud APIs)
+
+**When This Occurs:**
+- Local Ollama unavailable (network unreachable, no models)
+- Cloud API key missing or invalid
+- Rate limit exceeded on primary provider
+
+**Symptoms:**
+- Requests take longer (fallback chains: local → OpenAI → Anthropic)
+- API response latency increases
+- Cost implications (using paid cloud APIs instead of local)
+
+**Recovery:**
+
+1. **Restore Local Ollama:**
+   ```bash
+   # Check Ollama status on host
+   curl http://host.docker.internal:11434/api/tags
+   
+   # If down, start Ollama
+   # On Mac: brew services start ollama
+   # On Linux: systemctl start ollama
+   # On Windows: ollama app
+   
+   # Pull a model if needed
+   ollama pull llama3.2:3b
+   
+   # Restart model-gateway to use local-first routing
+   make restart
+   ```
+
+2. **Verify Cloud API Keys:**
+   ```bash
+   # Check env vars
+   env | grep -E "OPENAI_API_KEY|ANTHROPIC_API_KEY"
+   
+   # Test connectivity
+   curl -X POST https://api.openai.com/v1/models \
+     -H "Authorization: Bearer $OPENAI_API_KEY"
+   ```
+
+3. **Switch Routing Mode:**
+   ```bash
+   # Use local-only mode (requires Ollama)
+   export GATEWAY_ROUTING_MODE=local-only
+   make restart
+   
+   # Or, use cloud-only mode (no Ollama needed)
+   export GATEWAY_ROUTING_MODE=cloud-only
+   make restart
+   ```
+
+### Mode: Redis Unavailable (In-Memory Loss)
+
+**When This Occurs:**
+- Redis container crashes
+- Data volume corrupted
+- Out of memory (container killed)
+
+**Symptoms:**
+- All services report "Redis connection refused"
+- No persistent state between requests
+- Active sessions lost immediately
+- Pending approvals lost
+
+**Recovery Steps:**
+
+1. **Quick Restart:**
+   ```bash
+   docker-compose restart redis
+   docker-compose exec redis redis-cli PING  # Wait for PONG
+   sleep 5
+   docker-compose restart workflow-engine lumyn
+   ```
+
+2. **If Data Lost (no backup):**
+   ```bash
+   # Accept data loss and rebuild
+   docker-compose down redis
+   docker volume rm prady-os-v2_redis-data
+   docker-compose up -d redis
+   
+   # Restart dependent services
+   docker-compose restart workflow-engine lumyn
+   ```
+
+3. **If Backup Available:**
+   ```bash
+   # Restore from backup
+   docker-compose cp backup/dump-latest.rdb redis:/data/dump.rdb
+   docker-compose restart redis
+   ```
+
+**Prevention:**
+Enable Redis persistence in `docker-compose.yml`:
+```yaml
+redis:
+  command: redis-server --appendonly yes
+  volumes:
+    - redis-data:/data
+```
+
+### Mode: Workflow Engine Stalled (Approval Backlog)
+
+**When This Occurs:**
+- Long-running approval workflows
+- Approval timeout reached (default 5 minutes)
+- Approval queue backed up
+
+**Symptoms:**
+- New task requests return HTTP 503 "workflow-engine unavailable"
+- Pending approvals stuck in queue
+- Logs show "APPROVAL_TIMEOUT_REACHED"
+
+**Recovery:**
+
+1. **Force-Complete Stuck Tasks:**
+   ```bash
+   # List pending approvals
+   docker-compose exec redis redis-cli LRANGE approvals:pending 0 -1
+   
+   # Approve a specific task
+   curl -X POST http://localhost:11431/task/TASK_ID/approve \
+     -H "Content-Type: application/json" \
+     -d '{"decision": "approve", "notes": "timeout override"}'
+   
+   # Or, reject and retry
+   curl -X POST http://localhost:11431/task/TASK_ID/approve \
+     -H "Content-Type: application/json" \
+     -d '{"decision": "reject", "reason": "timeout"}'
+   ```
+
+2. **Increase Approval Timeout:**
+   ```bash
+   # In .env or docker-compose environment
+   export APPROVAL_TIMEOUT_SECONDS=900  # 15 minutes
+   make restart
+   ```
+
+3. **Clear Approval Queue (Data Loss):**
+   ```bash
+   docker-compose exec redis redis-cli DEL approvals:pending
+   docker-compose restart workflow-engine
+   ```
+
+### Mode: Memory Pressure (Reduced Capacity)
+
+**When This Occurs:**
+- System low on RAM
+- Container memory limits exceeded
+- Multiple services OOMKilled
+
+**Symptoms:**
+- Random service restarts
+- Slow responses (swapping)
+- Logs show "OOMKilled" or "Memory limit exceeded"
+
+**Recovery:**
+
+1. **Increase Docker Memory Limits:**
+   ```bash
+   # Update docker-compose.yml
+   services:
+     model-gateway:
+       deploy:
+         resources:
+           limits:
+             memory: 2G  # Increase from 1G
+   
+   # Reapply
+   docker-compose up -d
+   ```
+
+2. **Reduce Load (Temporarily):**
+   ```bash
+   # Stop non-critical services
+   docker-compose stop screen-agent lumyn  # Keep model-gateway running
+   
+   # Or, reduce concurrency
+   export GATEWAY_MAX_CONCURRENT_REQUESTS=5  # Default 20
+   make restart
+   ```
+
+3. **Monitor Memory Usage:**
+   ```bash
+   docker stats
+   docker-compose exec redis redis-cli INFO memory
+   ```
+
+### Mode: Network Partition (Service-to-Service Isolation)
+
+**When This Occurs:**
+- Docker network misconfigured
+- Firewall rules block internal traffic
+- DNS resolution fails
+
+**Symptoms:**
+- Services report "connection refused" to other services
+- Health checks fail for inter-service endpoints
+- Logs show "Name resolution failed for 'service-name'"
+
+**Recovery:**
+
+1. **Verify Network Connectivity:**
+   ```bash
+   # Check if services can reach each other
+   docker-compose exec model-gateway nslookup workflow-engine
+   docker-compose exec workflow-engine curl http://model-gateway:8000/healthz
+   ```
+
+2. **Recreate Network:**
+   ```bash
+   docker network rm prady-net
+   docker-compose down --remove-orphans
+   docker-compose up -d
+   ```
+
+3. **Check Service Links:**
+   ```bash
+   # Verify docker-compose.yml has depends_on constraints
+   docker-compose config | grep -A 5 "depends_on"
+   ```
+
+### Mode: API Rate Limit Exceeded (Cloud Provider Throttled)
+
+**When This Occurs:**
+- Cloud API (OpenAI, Anthropic) rate limit hit
+- Too many requests in short time
+- Quota exhausted
+
+**Symptoms:**
+- Requests return HTTP 429 "Too Many Requests"
+- LLM responses delayed or failed
+- Model gateway logs show "rate_limit_exceeded"
+
+**Recovery:**
+
+1. **Fallback to Local Ollama:**
+   ```bash
+   export GATEWAY_ROUTING_MODE=local-only
+   make restart
+   ```
+
+2. **Implement Request Backoff:**
+   ```bash
+   # In application code or config
+   export GATEWAY_REQUEST_BACKOFF=exponential  # or linear, none
+   export GATEWAY_RETRY_MAX_ATTEMPTS=5
+   make restart
+   ```
+
+3. **Monitor Cloud Usage:**
+   ```bash
+   # Check OpenAI account usage
+   curl https://api.openai.com/dashboard/billing/usage \
+     -H "Authorization: Bearer $OPENAI_API_KEY" | jq .
+   ```
+
+### Mode: Policy Engine Denies All Actions (Overly Restrictive)
+
+**When This Occurs:**
+- Policy mode set to "deny-all" for safety
+- Policy file corrupted
+- Screen agent in "overly-restrictive" mode
+
+**Symptoms:**
+- All desktop automation returns "POLICY_DENIED"
+- Logs show "policy_check_failed: action_type=CLICK policy_mode=DENY_ALL"
+
+**Recovery:**
+
+1. **Change Policy Mode:**
+   ```bash
+   # Switch to permissive mode temporarily
+   export ACTION_POLICY=permissive
+   make restart
+   
+   # Then review and fix policy file
+   cat ./automation/screen-agent/config/policy.yaml
+   ```
+
+2. **Review Policy File:**
+   ```bash
+   # Ensure policy allows safe actions
+   grep -E "allow:|deny:" ./automation/screen-agent/config/policy.yaml
+   ```
+
+### Recovery Checklist for Multi-Service Failures
+
+Use this checklist when multiple services are down:
+
+```
+[ ] 1. Check docker-compose status: docker-compose ps
+[ ] 2. Check Docker daemon: docker ps (should work)
+[ ] 3. Restart Redis: docker-compose restart redis
+[ ] 4. Wait 5 seconds for health checks to pass
+[ ] 5. Restart all services: docker-compose restart
+[ ] 6. Verify health endpoints: make health
+[ ] 7. Check logs for errors: make logs
+[ ] 8. If still failing, do clean rebuild:
+      [ ] a. docker-compose down -v
+      [ ] b. docker-compose build --no-cache
+      [ ] c. docker-compose up -d
+      [ ] d. Verify all services healthy
+[ ] 9. If still failing, check .env configuration
+[ ] 10. If still failing, consult ARCHITECTURE.md for dependency order
+```
+
+---
+
 ## Support & Escalation
 
 ### Getting Help
