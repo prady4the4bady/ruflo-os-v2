@@ -58,7 +58,7 @@ lb config \
   --mode debian \
   --distribution bookworm \
   --architectures amd64 \
-  --binary-images iso-hybrid \
+  --binary-images iso \
   --debian-installer false \
   --archive-areas "main contrib non-free non-free-firmware" \
   --mirror-bootstrap "http://deb.debian.org/debian" \
