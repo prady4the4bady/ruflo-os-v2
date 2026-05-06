@@ -4,3 +4,4 @@ pytest-asyncio==0.24.0
 pytest-mock==3.14.0
 anyio==4.6.2
 respx==0.21.1
+trio==0.26.2

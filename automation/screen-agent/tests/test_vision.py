@@ -123,11 +123,8 @@ class TestPolicyGate:
     def test_action_blocked_when_not_approved(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        monkeypatch.setenv("ACTION_POLICY", "require_approval_for_shell")
-        # Re-import policy module to pick up env var change
-        import importlib
         import app.policy as policy_mod
-        importlib.reload(policy_mod)
+        monkeypatch.setattr(policy_mod, "ACTION_POLICY", "require_approval_for_shell")
 
         client = TestClient(create_app())
 
@@ -147,10 +144,8 @@ class TestPolicyGate:
     def test_action_allowed_when_approved(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        monkeypatch.setenv("ACTION_POLICY", "require_approval_for_shell")
-        import importlib
         import app.policy as policy_mod
-        importlib.reload(policy_mod)
+        monkeypatch.setattr(policy_mod, "ACTION_POLICY", "require_approval_for_shell")
 
         client = TestClient(create_app())
 
@@ -169,10 +164,8 @@ class TestPolicyGate:
     def test_no_policy_skips_gate(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        monkeypatch.delenv("ACTION_POLICY", raising=False)
-        import importlib
         import app.policy as policy_mod
-        importlib.reload(policy_mod)
+        monkeypatch.setattr(policy_mod, "ACTION_POLICY", "")
 
         client = TestClient(create_app())
 
