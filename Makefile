@@ -4,7 +4,7 @@ NODE := node
 DOCKER := docker
 DOCKER_COMPOSE := docker-compose
 
-.PHONY: up down logs test-all test-phase1 test-phase2 test-phase3 test-phase4 test-phase5 dev-up dev-down test-e2e doctor validate check-updates audit-deps audit-node-deps lint
+.PHONY: up down logs test-all test-phase1 test-phase2 test-phase3 test-phase4 test-phase5 dev-up dev-down test-e2e doctor validate check-updates audit-deps audit-node-deps lint health restart clean
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Health & Validation
@@ -120,6 +120,68 @@ check-updates:
 # Development Commands
 # ─────────────────────────────────────────────────────────────────────────────
 
+health:
+	@echo "📊 Service Health Status"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@echo "Checking service health via health endpoints..."
+	@for port in 11430 11431 11433 11436; do \
+		service=$$([ $$port -eq 11430 ] && echo "model-gateway" || ([ $$port -eq 11431 ] && echo "workflow-engine" || ([ $$port -eq 11433 ] && echo "screen-agent" || echo "lumyn"))); \
+		if curl -s http://localhost:$$port/healthz > /dev/null 2>&1; then \
+			echo "✓ $$service (http://localhost:$$port/healthz) - healthy"; \
+		else \
+			echo "⚠ $$service (http://localhost:$$port/healthz) - unreachable"; \
+		fi; \
+	done
+	@echo ""
+	@echo "Checking Docker containers..."
+	@$(DOCKER_COMPOSE) ps
+	@echo ""
+
+restart:
+	@echo "🔄 Restarting Prady OS v2 services..."
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) restart
+	@echo "⏳ Waiting for services to recover..."
+	@sleep 5
+	@echo "✓ Services restarted. Check health with: make health"
+	@echo ""
+
+clean:
+	@echo "🧹 Cleaning up Prady OS v2..."
+	@echo ""
+	@echo "Removing Docker containers and volumes..."
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) down -v --remove-orphans 2>/dev/null || true
+	@echo "✓ Containers and volumes removed"
+	@echo ""
+	@echo "Cleaning Python virtual environments..."
+	@find . -type d -name ".venv" -o -name "__pycache__" -o -name "*.egg-info" | while read -r dir; do \
+		echo "  Removing $$dir"; \
+		rm -rf "$$dir"; \
+	done
+	@echo "✓ Python caches cleaned"
+	@echo ""
+	@echo "Cleaning Node.js dependencies..."
+	@find . -type d -name "node_modules" | while read -r dir; do \
+		echo "  Removing $$dir"; \
+		rm -rf "$$dir"; \
+	done
+	@find . -type f -name "package-lock.json" | while read -r file; do \
+		echo "  Removing $$file"; \
+		rm -f "$$file"; \
+	done
+	@echo "✓ Node.js caches cleaned"
+	@echo ""
+	@echo "Removing build artifacts..."
+	@find . -type d -name "dist" -o -name "build" -o -name ".pytest_cache" | while read -r dir; do \
+		echo "  Removing $$dir"; \
+		rm -rf "$$dir"; \
+	done
+	@echo "✓ Build artifacts cleaned"
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "✓ Cleanup complete! Start fresh with: make dev-up"
+	@echo ""
+
 up:
 	docker compose up --build
 
@@ -198,6 +260,7 @@ help:
 	@echo "Health & Validation:"
 	@echo "  make doctor           Check environment readiness"
 	@echo "  make validate         Run all validations (compose, deps, lint, tests)"
+	@echo "  make health           Check service health endpoints"
 	@echo "  make audit-deps       Audit Python dependencies for vulnerabilities"
 	@echo "  make audit-node-deps  Audit Node.js dependencies"
 	@echo "  make check-updates    Check for available package updates"
@@ -205,7 +268,9 @@ help:
 	@echo "Development:"
 	@echo "  make dev-up           Start all services"
 	@echo "  make dev-down         Stop all services"
+	@echo "  make restart          Restart all running services"
 	@echo "  make logs             View service logs"
+	@echo "  make clean            Deep clean (containers, venv, caches, artifacts)"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test-all         Run all unit tests"
