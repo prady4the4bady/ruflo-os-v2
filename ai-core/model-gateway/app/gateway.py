@@ -103,8 +103,31 @@ class ModelGateway:
                 )
                 return response
 
-            except GatewayError:
-                raise  # policy errors propagate immediately
+            except GatewayError as exc:
+                # Backend-specific gateway errors (e.g., missing provider key)
+                # should allow trying the next backend in fallback order.
+                logger.warning(
+                    "Backend '%s' gateway error [correlation_id=%s]: %s",
+                    backend,
+                    correlation_id,
+                    exc,
+                )
+                last_error = exc
+                await self._audit.log_response(
+                    correlation_id=correlation_id,
+                    backend=backend,
+                    success=False,
+                    error=str(exc),
+                )
+
+                if self._engine.is_local_only():
+                    raise GatewayError(
+                        f"local-only policy: Ollama unavailable and cloud fallback is blocked. "
+                        f"Error: {exc}",
+                        status_code=503,
+                    ) from exc
+
+                continue  # try next backend
 
             except Exception as exc:
                 logger.warning(

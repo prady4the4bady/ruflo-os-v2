@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import anyio
 import pytest
 
 from app.audit import AuditLogger
@@ -104,20 +105,21 @@ async def test_audit_failure_response(tmp_path: Path):
 
 async def test_audit_concurrent_writes(tmp_path: Path):
     """Multiple concurrent appends must not interleave lines."""
-    import asyncio
-
     logger = AuditLogger(log_dir=tmp_path)
-    coros = [
-        logger.log_request(
+
+    async def _write_one(i: int) -> None:
+        await logger.log_request(
             correlation_id=f"cid-{i}",
             endpoint="chat/completions",
             model="m",
             policy_mode="local-first",
             backends_to_try=["ollama"],
         )
-        for i in range(20)
-    ]
-    await asyncio.gather(*coros)
+
+    async with anyio.create_task_group() as tg:
+        for i in range(20):
+            tg.start_soon(_write_one, i)
+
     lines = logger.log_path.read_text().strip().splitlines()
     assert len(lines) == 20
     # every line must be valid JSON
