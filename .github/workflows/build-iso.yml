@@ -19,12 +19,7 @@ jobs:
         run: |
           # live-build calls isohybrid after genisoimage to create a hybrid-boot ISO.
           # On Ubuntu 24.04 runners isohybrid is not available; shim it so build succeeds.
-          # The ISO itself is already a valid bootable image without this post-processing.
-          sudo tee /usr/bin/isohybrid > /dev/null << 'EOF'
-#!/bin/sh
-echo "isohybrid shim: ignoring hybrid conversion (CI only)"
-exit 0
-EOF
+          printf '#!/bin/sh\necho "isohybrid shim: CI only"\nexit 0\n' | sudo tee /usr/bin/isohybrid > /dev/null
           sudo chmod +x /usr/bin/isohybrid
 
       - name: Disable live-build syslinux stage
