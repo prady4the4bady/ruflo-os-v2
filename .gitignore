@@ -11,6 +11,10 @@ installer/calamares-upstream/
 installer/live-images-reference/
 installer/firstboot-wizard/node_modules/
 
+# Node.js
+desktop/aqua-shell/node_modules/
+**/node_modules/
+
 # Python
 __pycache__/
 *.pyc
