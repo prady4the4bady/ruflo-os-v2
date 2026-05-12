@@ -185,23 +185,27 @@ jobs:
 
       - name: Audit ai-core/model-gateway
         working-directory: ai-core/model-gateway
-        run: pip-audit --requirement requirements.txt --disable-pip
-        continue-on-error: true
+        run: |
+          pip-audit --requirement requirements.txt --no-deps || \
+            echo "::notice title=pip-audit::ai-core/model-gateway has advisories (see log)"
 
       - name: Audit orchestration/workflow-engine
         working-directory: orchestration/workflow-engine
-        run: pip-audit --requirement requirements.txt --disable-pip
-        continue-on-error: true
+        run: |
+          pip-audit --requirement requirements.txt --no-deps || \
+            echo "::notice title=pip-audit::orchestration/workflow-engine has advisories (see log)"
 
       - name: Audit automation/screen-agent
         working-directory: automation/screen-agent
-        run: pip-audit --requirement requirements.txt --disable-pip
-        continue-on-error: true
+        run: |
+          pip-audit --requirement requirements.txt --no-deps || \
+            echo "::notice title=pip-audit::automation/screen-agent has advisories (see log)"
 
       - name: Audit agents/lumyn
         working-directory: agents/lumyn
-        run: pip-audit --requirement requirements.txt --disable-pip
-        continue-on-error: true
+        run: |
+          pip-audit --requirement requirements.txt --no-deps || \
+            echo "::notice title=pip-audit::agents/lumyn has advisories (see log)"
 
   audit-node-deps:
     name: Audit Node.js dependencies
@@ -219,8 +223,9 @@ jobs:
 
       - name: Audit desktop/aqua-shell
         working-directory: desktop/aqua-shell
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
+        run: |
+          npm audit --audit-level=moderate || \
+            echo "::notice title=npm-audit::desktop/aqua-shell has advisories (see log)"
 
   trigger-build-iso:
     name: Trigger ISO build
