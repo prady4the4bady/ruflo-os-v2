@@ -12,9 +12,6 @@ if [ ! -e /usr/bin/genisoimage.real ]; then
 	mv /usr/bin/genisoimage /usr/bin/genisoimage.real
 fi
 
-cat > /usr/bin/genisoimage << 'EOF'
-#!/bin/sh
-exec /usr/bin/genisoimage.real -allow-limited-size "$@"
-EOF
+printf '%s\n' '#!/bin/sh' 'exec /usr/bin/genisoimage.real -allow-limited-size "$@"' > /usr/bin/genisoimage
 
 chmod +x /usr/bin/genisoimage

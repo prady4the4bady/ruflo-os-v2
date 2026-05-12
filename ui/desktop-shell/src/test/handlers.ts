@@ -127,11 +127,25 @@ const mockPackageOperations = [
 ];
 
 export const handlers = [
+  http.get("/api/system/first-boot-status", () => {
+    return HttpResponse.json({ complete: true });
+  }),
+  http.post("/api/system/first-boot-complete", () => {
+    return HttpResponse.json({ status: "ok" });
+  }),
   http.get("http://localhost:8099/api/oobe/status", () => {
     return HttpResponse.json({ complete: true });
   }),
   http.get("/api/oobe/status", () => {
     return HttpResponse.json({ complete: true });
+  }),
+  http.get("/api/system/version", () => {
+    return HttpResponse.json({
+      name: "Prady OS",
+      version: "1.0.0",
+      channel: "stable",
+      build: "phase-38",
+    });
   }),
   http.get("/api/system/about", () => {
     return HttpResponse.json({

@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Security updates are provided for the latest stable release line.
+Security updates are provided for the latest stable Prady OS release line.
 
 | Version | Supported |
 | --- | --- |
@@ -11,32 +11,30 @@ Security updates are provided for the latest stable release line.
 
 ## Reporting a Vulnerability
 
-If you discover a security issue, do not open a public issue with exploit details.
+Do not open a public issue for a suspected vulnerability.
 
-Please report responsibly with:
+Please report with:
 
-- A clear description of the issue
+- Affected component or service
 - Reproduction steps
+- Expected and observed behavior
 - Impact assessment
-- Suggested mitigation (if available)
+- Any proposed mitigation or workaround
 
-Use one of the following channels:
-
-- Security contact in repository settings
-- Private maintainer contact used for release operations
+Use a private maintainer contact or repository security reporting channel.
 
 ## Response Targets
 
 - Initial acknowledgement: within 72 hours
-- Triage status update: within 7 days
-- Fix timeline: based on severity and exploitability
+- Triage update: within 7 days
+- Remediation timeline: based on severity and exploitability
 
 ## Disclosure Process
 
-1. Report is received and triaged.
-2. Affected versions and components are validated.
-3. A patch is prepared and tested.
-4. Coordinated disclosure is published with remediation guidance.
+1. Report received and validated.
+2. Affected versions and surfaces confirmed.
+3. Fix prepared and regression-tested.
+4. Coordinated disclosure published with remediation guidance.
 
 ## Security Baseline
 
@@ -44,179 +42,21 @@ Prady OS v1.0.0 applies these baseline controls:
 
 - Policy-gated agent actions in platform runtime
 - Service-level health and diagnostics endpoints
-- Signed release artifact workflow with checksums
-- CI validation with strict type/lint/test gates
+- Signed release artifacts with checksum support
+- Strict test, typecheck, lint, and compose validation gates
 
 ## Hardening Recommendations
 
-- Keep secrets out of source and rotate credentials regularly.
-- Restrict service exposure to trusted networks.
-- Run only required ports and disable unused services.
-- Monitor logs for unusual tool/action patterns.
-- Pin and audit dependencies as part of release checks.
+- Keep secrets out of source control and rotate credentials regularly.
+- Restrict service exposure to trusted networks only.
+- Enable HTTPS and authenticated service-to-service communication in production.
+- Monitor logs for denied actions, unusual request bursts, and repeated task failures.
+- Pin, review, and audit dependencies as part of each release cycle.
 
-## Scope Notes
+## Scope
 
 This policy covers first-party Prady OS components in this repository.
-Third-party upstream mirrors and vendored projects follow their own disclosure policies.
-
-**Example Policy:**
-```yaml
-deny:
-  - action: shell-execute
-    reason: "No direct shell access"
-  - action: file-delete
-    reason: "Requires approval"
-    approval_required: true
-allow:
-  - action: mouse-click
-  - action: screenshot
-```
-
-**Detection:**
-- Monitor for denied actions in screen-agent logs
-- Alert on policy violations
-- Review approval decisions regularly
-
----
-
-#### Scenario 4: Denial of Service (DoS)
-
-**Attack:** Attacker floods redis or model-gateway with requests.
-
-**Mitigation:**
-1. Rate limiting on model-gateway (per model, per hour)
-2. Task queue depth monitoring
-3. Approval queue timeout (prevents stuck tasks)
-4. Redis memory limits and eviction policy
-
-**Detection:**
-- Monitor Redis memory: `redis-cli INFO memory`
-- Alert if task queue depth > 100
-- Alert if approval queue > 10 for > 5 minutes
-
----
-
-#### Scenario 5: Session Hijacking
-
-**Attack:** Attacker intercepts or reuses session tokens.
-
-**Mitigation:**
-1. Sessions stored in Redis (in-memory, encrypted in transit via HTTPS in production)
-2. Session timeout: 1 hour (LUMYN_SESSION_TIMEOUT)
-3. Session IDs are cryptographically random (not sequential)
-4. No session persistence across restarts (by design)
-
-**Production Enhancement:**
-- Use HTTPS for all service-to-service communication
-- Add session token signing (JWT with HS256)
-- Implement session revocation list (Redis)
-
----
-
-#### Scenario 6: Malicious Model Output
-
-**Attack:** Cloud API (OpenAI, Anthropic) returns malicious content (e.g., shell commands).
-
-**Mitigation:**
-1. Lumyn agent validates tool calls before execution
-2. ReAct loop enforces structured output parsing
-3. Tool validation before execution (no direct string execution)
-4. Output logged for audit and review
-
-**Example Safe Tool Call:**
-```python
-# UNSAFE: Direct execution
-bash(f"curl {user_url}")
-
-# SAFE: Validated tool call
-url = parse_url(user_input)  # Validation
-if not url.is_trusted():
-    raise PolicyError("Untrusted URL")
-result = browser_navigate(url)  # Controlled tool
-```
-
----
-
-### Attack Tree
-
-```
-┌── Compromise Kryos System
-    ├── [1] Exploit Input Validation
-    │   ├── Prompt Injection → Lumyn (ReAct validates) → MITIGATED
-    │   ├── File Path Traversal → screen-agent (policy gates) → MITIGATED
-    │   └── SQL Injection → Redis (no SQL, RESP protocol) → N/A
-    │
-    ├── [2] Steal API Keys
-    │   ├── From Environment → Keys in .env, not logged → MITIGATED
-    │   ├── From Memory → Process-level isolation (containers) → MITIGATED
-    │   ├── From Network → Encrypt in transit (HTTPS in prod) → MITIGATED
-    │   └── From Logs → Keys never logged → MITIGATED
-    │
-    ├── [3] Bypass Approval Workflow
-    │   ├── Session Hijacking → Session timeouts, HTTPS → MITIGATED
-    │   ├── Token Replay → Random session IDs → MITIGATED
-    │   └── Approval Timeout → Explicit human decision → MITIGATED
-    │
-    ├── [4] Unauthorized Desktop Access
-    │   ├── Unpatched X11 → DISPLAY isolation → MITIGATED
-    │   ├── Policy Bypass → Policy engine validates all → MITIGATED
-    │   └── Sudo Escalation → No sudo in containers → MITIGATED
-    │
-    ├── [5] Redis Compromise
-    │   ├── Network Access → No external network exposure → MITIGATED
-    │   ├── Authentication → Trusted network (no password required) → ACCEPTED RISK
-    │   └── Data Exposure → Sessions in-memory (ephemeral) → ACCEPTED RISK
-    │
-    └── [6] Supply Chain Attack
-        ├── Malicious Dependency → Dependency audit (Phase B) → MITIGATED
-        ├── Docker Image Tampering → Image signing (future) → FUTURE
-        └── GitHub Actions Compromise → Branch protection, code review → MITIGATED
-```
-
----
-
-## Trust Boundaries
-
-### Zone 1: User Input (Untrusted)
-
-**Boundary:** Lumyn agent receives user goals/queries.
-
-**Controls:**
-- Input validation (length, charset)
-- ReAct loop enforces structured output
-- Tool call validation before execution
-- Audit logging of all user input
-
----
-
-### Zone 2: Agent Layer (Semi-Trusted)
-
-**Boundary:** Lumyn, workflow-engine, screen-agent.
-
-**Controls:**
-- Service-to-service authentication (future: mTLS)
-- Rate limiting per service
-- Audit trail for all operations
-- Policy gating for destructive actions
-
----
-
-### Zone 3: External APIs (Semi-Trusted)
-
-**Boundary:** OpenAI, Anthropic, Ollama.
-
-**Controls:**
-- API key rotation (monthly)
-- Circuit breaker for API failures
-- Response validation (no injection)
-- Cost monitoring (alert on spike)
-
----
-
-### Zone 4: System Services (Trusted)
-
-**Boundary:** Redis, Docker network.
+Third-party upstream mirrors and vendored projects follow their own security policies.
 
 **Controls:**
 - Network isolation (no public exposure)

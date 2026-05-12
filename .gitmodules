@@ -4,12 +4,6 @@
 [submodule "compositor/hyprland-base"]
 	path = compositor/hyprland-base
 	url = https://github.com/hyprwm/Hyprland
-[submodule "vyrex/vyrex-upstream"]
-	path = vyrex/vyrex-upstream
-	url = https://github.com/NVIDIA/Vyrex
-[submodule "prax-agent/prady-upstream"]
-	path = prax-agent/prady-upstream
-	url = https://github.com/ruvnet/prady
 [submodule "shell/rofi-base"]
 	path = shell/rofi-base
 	url = https://github.com/lbonn/rofi

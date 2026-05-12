@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,8 @@ VERSION = "1.0.0"
 SERVICE_NAME = "sdk-registry"
 DB_PATH = "/data/sdk_registry/registry.db"
 WORKSPACE_BASE = "/home/user/kryos-apps"
+
+logger = logging.getLogger(__name__)
 
 
 class InstallRequest(BaseModel):
@@ -50,13 +53,40 @@ class FsWriteRequest(BaseModel):
     content: str
 
 
+class _NoopSandboxManager:
+    available = False
+
+    def start_app(self, app_id: str, manifest: dict[str, Any]):
+        raise RuntimeError("sandbox unavailable: docker socket access is not available")
+
+    def stop_app(self, _app_id: str) -> bool:
+        return False
+
+    def get_status(self, _app_id: str):
+        class _Status:
+            status = "unavailable"
+            container_id = None
+            uptime_seconds = 0
+            memory_used_mb = 0.0
+            cpu_pct = 0.0
+
+        return _Status()
+
+    def remove_app(self, _app_id: str) -> bool:
+        return False
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db = RegistryDB(db_path=DB_PATH)
     await db.init()
     app.state.db = db
     app.state.validator = ManifestValidator()
-    app.state.sandbox = SandboxManager(workspace_base=WORKSPACE_BASE)
+    try:
+        app.state.sandbox = SandboxManager(workspace_base=WORKSPACE_BASE)
+    except Exception as exc:
+        logger.warning("Sandbox disabled: %s", exc)
+        app.state.sandbox = _NoopSandboxManager()
     app.state.router = CapabilityRouter(db)
     yield
     if app.state.db:

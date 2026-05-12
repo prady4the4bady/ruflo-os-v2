@@ -37,7 +37,7 @@ All notable changes to this project are documented in this file.
 ### Validation Snapshot
 
 - `python -m pytest ... -W error::DeprecationWarning -q --tb=short`
-  - 708 passed, 2 skipped, 7 warnings, 0 failed
+  - 710 passed, 2 skipped, 8 warnings, 0 failed
 - TypeScript/ESLint gates:
   - desktop shell strict typecheck: pass
   - desktop shell eslint max warnings 0: pass
@@ -47,7 +47,9 @@ All notable changes to this project are documented in this file.
   - prod compose config: pass
   - build/sign/write shell syntax: pass
 - Gate 9 canonical old-name scan:
-  - clean for required term set
+  - clean for the required legacy term set
+- Gate 10 runtime smoke:
+  - requires Docker Desktop on the Windows host
 
 ### Notes
 

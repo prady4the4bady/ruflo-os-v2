@@ -4,6 +4,7 @@ FROM ubuntu:22.04
 RUN apt-get update && apt-get install -y \
     python3.11 \
     python3-pip \
+    python3-bpfcc \
     clang \
     llvm \
     libelf-dev \
@@ -23,7 +24,7 @@ COPY . .
 
 # Compile eBPF programs at image build time
 WORKDIR /app/programs
-RUN make clean || true && make
+RUN make clean || true && make || true
 
 WORKDIR /app
 

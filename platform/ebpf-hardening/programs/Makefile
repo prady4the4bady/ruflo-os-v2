@@ -16,7 +16,7 @@ INCLUDES ?= -I$(shell $(LLVM_CONFIG) --includedir) -I/usr/include/bpf
 CFLAGS ?= -O2 -target bpf -D__TARGET_ARCH_$(ARCH) -D__KERNEL__ -D__BPF_CORE__
 LDFLAGS ?= -lelf -lz
 
-TARGETS := prady_agent_seccomp.bpf.o computer_use_lsm.bpf.o audit_syscalls.bpf.o
+TARGETS := prax_agent_seccomp.bpf.o computer_use_lsm.bpf.o audit_syscalls.bpf.o
 
 all: $(TARGETS)
 

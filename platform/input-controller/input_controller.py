@@ -13,6 +13,9 @@ import zlib
 from pathlib import Path
 from typing import List
 
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
 logger = logging.getLogger(__name__)
 
 AUDIT_LOG_PATH = Path("platform/audit/input_events.jsonl")
@@ -173,3 +176,65 @@ class InputController:
         except Exception as exc:
             logger.warning("screenshot failed: %s", exc)
             return _make_minimal_png()
+
+
+class MoveMouseRequest(BaseModel):
+    x: int
+    y: int
+    duration: float = 0.3
+
+
+class ClickRequest(BaseModel):
+    x: int
+    y: int
+    button: str = "left"
+
+
+class TypeTextRequest(BaseModel):
+    text: str
+    interval: float = 0.05
+
+
+class HotkeyRequest(BaseModel):
+    keys: List[str]
+
+
+app = FastAPI(title="Input Controller", version="1.0.0")
+controller = InputController()
+
+
+@app.get("/health")
+def health() -> dict:
+    return {"status": "ok"}
+
+
+@app.post("/mouse/move")
+def move_mouse(request: MoveMouseRequest) -> dict:
+    controller.move_mouse(request.x, request.y, duration=request.duration)
+    return {"ok": True}
+
+
+@app.post("/mouse/click")
+def click_mouse(request: ClickRequest) -> dict:
+    controller.click(request.x, request.y, button=request.button)
+    return {"ok": True}
+
+
+@app.post("/keyboard/type")
+def type_text(request: TypeTextRequest) -> dict:
+    controller.type_text(request.text, interval=request.interval)
+    return {"ok": True}
+
+
+@app.post("/keyboard/hotkey")
+def press_hotkey(request: HotkeyRequest) -> dict:
+    if not request.keys:
+        raise HTTPException(status_code=400, detail="keys must not be empty")
+    controller.hotkey(*request.keys)
+    return {"ok": True}
+
+
+@app.get("/screen/screenshot")
+def screenshot() -> dict:
+    png_bytes = controller.screenshot()
+    return {"png_size": len(png_bytes)}

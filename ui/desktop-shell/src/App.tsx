@@ -26,6 +26,8 @@ import Dock from "./Dock";
 import WindowOverview from "./WindowOverview";
 import { ShellWindowStateProvider, useShellWindowState } from "./ShellWindowState";
 import SoftwareUpdate from "./apps/SoftwareUpdate/SoftwareUpdate";
+import About from "./apps/About";
+import FirstBootWizard from "./components/FirstBootWizard";
 
 function isTypingTarget(target: EventTarget | null): boolean {
   const element = target as HTMLElement | null;
@@ -58,9 +60,11 @@ function AppShell(): JSX.Element | null {
   const [voiceBarOpen, setVoiceBarOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [oobeWizardOpen, setOobeWizardOpen] = useState(false);
-  const [systemAbout, setSystemAbout] = useState<{ version: string; channel: string }>({
+  const [systemAbout, setSystemAbout] = useState<{ name: string; version: string; channel: string; build?: string }>({
+    name: "Prady OS",
     version: "1.0.0",
     channel: "stable",
+    build: "phase-38",
   });
   const previousSessionRef = useRef<{ authToken: string; refreshToken: string; user: UserProfile } | null>(null);
 
@@ -221,7 +225,7 @@ function AppShell(): JSX.Element | null {
 
     void (async () => {
       try {
-        const res = await fetch("http://localhost:8099/api/oobe/status");
+        const res = await fetch("/api/system/first-boot-status");
         if (!res.ok) throw new Error("oobe status unavailable");
         const data = (await res.json()) as { complete?: boolean };
         if (data.complete === false) {
@@ -254,15 +258,17 @@ function AppShell(): JSX.Element | null {
     let mounted = true;
     void (async () => {
       try {
-        const response = await fetch("/api/system/about");
+        const response = await fetch("/api/system/version");
         if (!response.ok) {
           return;
         }
-        const payload = (await response.json()) as { version?: string; channel?: string };
+        const payload = (await response.json()) as { name?: string; version?: string; channel?: string; build?: string };
         if (mounted) {
           setSystemAbout({
+            name: payload.name ?? "Prady OS",
             version: payload.version ?? "1.0.0",
             channel: payload.channel ?? "stable",
+            build: payload.build ?? "phase-38",
           });
         }
       } catch {
@@ -557,117 +563,9 @@ function AppShell(): JSX.Element | null {
         <span><kbd style={{ color: '#F2F2F7' }}>⌘⇧A</kbd> App Store</span>
       </footer>
 
-      {aboutOpen ? (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.42)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 70,
-          }}
-          onClick={() => setAboutOpen(false)}
-        >
-          <section
-            style={{
-              width: 420,
-              borderRadius: 16,
-              border: "1px solid rgba(58,58,60,0.5)",
-              background: "rgba(28,28,30,0.9)",
-              color: "#F2F2F7",
-              padding: 20,
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-            }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2 style={{ margin: 0, fontSize: 20 }}>About PradyOS</h2>
-            <p style={{ marginTop: 8, color: "#AEAEB2" }}>
-              Version {systemAbout.version} · Channel {systemAbout.channel}
-            </p>
-            <p style={{ marginTop: 12, color: "#D1D1D6", fontSize: 13 }}>
-              PradyOS desktop shell and AI platform runtime.
-            </p>
-            <button
-              type="button"
-              onClick={() => setAboutOpen(false)}
-              style={{
-                marginTop: 12,
-                borderRadius: 10,
-                border: "1px solid rgba(118,118,128,0.4)",
-                background: "rgba(99,102,241,0.85)",
-                color: "#fff",
-                padding: "6px 12px",
-                cursor: "pointer",
-              }}
-            >
-              Close
-            </button>
-          </section>
-        </div>
-      ) : null}
+      <About open={aboutOpen} onClose={() => setAboutOpen(false)} about={systemAbout} />
 
-      {oobeWizardOpen ? (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 75,
-          }}
-        >
-          <div
-            style={{
-              width: "min(1120px, 94vw)",
-              height: "min(780px, 92vh)",
-              borderRadius: 18,
-              overflow: "hidden",
-              border: "1px solid rgba(58,58,60,0.6)",
-              background: "#0a0e1a",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <div
-              style={{
-                height: 46,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0 14px",
-                background: "rgba(17,24,39,0.88)",
-                color: "#F9FAFB",
-              }}
-            >
-              <strong>PradyOS First Boot Wizard</strong>
-              <button
-                type="button"
-                onClick={() => setOobeWizardOpen(false)}
-                style={{
-                  borderRadius: 8,
-                  border: "1px solid rgba(148,163,184,0.4)",
-                  background: "transparent",
-                  color: "#E5E7EB",
-                  padding: "5px 10px",
-                  cursor: "pointer",
-                }}
-              >
-                Close
-              </button>
-            </div>
-            <iframe
-              title="PradyOS First Boot Wizard"
-              src="http://localhost:8099/oobe"
-              style={{ flex: 1, border: 0, width: "100%" }}
-            />
-          </div>
-        </div>
-      ) : null}
+      <FirstBootWizard open={oobeWizardOpen} onClose={() => setOobeWizardOpen(false)} />
     </>
   );
 }

@@ -82,11 +82,14 @@ class SandboxManager:
         started_at = state.get("StartedAt")
         uptime_seconds = 0
         if started_at:
-            from datetime import datetime
+            from datetime import datetime, timezone
 
             try:
                 started = datetime.fromisoformat(str(started_at).replace("Z", "+00:00"))
-                uptime_seconds = max(0, int((datetime.utcnow() - started.replace(tzinfo=None)).total_seconds()))
+                now_utc = datetime.now(timezone.utc)
+                if started.tzinfo is None:
+                    started = started.replace(tzinfo=timezone.utc)
+                uptime_seconds = max(0, int((now_utc - started).total_seconds()))
             except Exception:
                 uptime_seconds = 0
         stats = container.stats(stream=False)

@@ -1,11 +1,11 @@
 FROM python:3.12-slim
 
 RUN apt-get update && apt-get install -y \
-    tesseract-ocr xdotool ydotool libx11-dev scrot \
+    tesseract-ocr xdotool libx11-dev scrot \
     libxtst-dev libpng-dev libjpeg-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY platform/computer-use/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app

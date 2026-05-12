@@ -23,7 +23,7 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 # ---------------------------------------------------------------------------
 # Path bootstrap – allow running from the platform/agent-runtime directory
@@ -61,11 +61,13 @@ _registry = ModelRegistry()
 # ---------------------------------------------------------------------------
 
 class SpawnRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     model_id: str
     policy_id: str = "task-executor"
 
 
 class AgentResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     agent_id: str
     model_id: str
     policy_id: str
@@ -86,12 +88,18 @@ class AutomateRequest(BaseModel):
 
 
 class ActiveModelRequest(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     model_id: str
 
 
 class ComputerTaskRunRequest(BaseModel):
     task_description: str
     max_steps: int = 20
+
+
+class ComputerExecuteRequest(BaseModel):
+    action: str
+    params: dict
 
 
 _active_model_id: str = "lumyn-default"
@@ -108,6 +116,8 @@ SECURITY_POLICY_URL = os.getenv("SECURITY_POLICY_URL", "http://security-policy:8
 OTA_SERVICE_URL = os.getenv("OTA_SERVICE_URL", "http://ota-service:8012")
 SELF_LEARNING_URL = os.getenv("SELF_LEARNING_URL", "http://self-learning:8018")
 SDK_REGISTRY_URL = os.getenv("SDK_REGISTRY_URL", "http://sdk-registry:8020")
+SYSTEM_HEALTH_URL = os.getenv("SYSTEM_HEALTH_URL", "http://system-health:8021")
+OOBE_SERVICE_URL = os.getenv("OOBE_SERVICE_URL", "http://oobe-service:8099")
 
 
 async def _notify_self_learning(
@@ -379,6 +389,14 @@ async def computer_task_run(
     }
 
 
+@app.post("/tasks")
+async def tasks_run(
+    req: ComputerTaskRunRequest,
+    x_run_id: str | None = Header(default=None, alias="X-Run-ID"),
+) -> dict:
+    return await computer_task_run(req, x_run_id)
+
+
 @app.post("/computer/task/stop")
 async def computer_task_stop() -> dict:
     request_stop()
@@ -392,6 +410,20 @@ async def computer_health() -> dict:
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.get(f"{computer_url}/health")
         return resp.json()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"computer-use service unavailable: {exc}") from exc
+
+
+@app.post("/api/computer/execute")
+async def api_computer_execute(req: ComputerExecuteRequest) -> dict:
+    computer_url = os.environ.get("COMPUTER_USE_URL", "http://computer-use:8106")
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"{computer_url}/execute",
+                json={"action": req.action, "params": req.params},
+            )
+        return JSONResponse(status_code=resp.status_code, content=resp.json())
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"computer-use service unavailable: {exc}") from exc
 
@@ -1166,6 +1198,64 @@ async def api_packages_check(package_id: str) -> dict:
 @app.delete("/api/packages/{package_id}")
 async def api_packages_remove(package_id: str) -> dict:
     return await _proxy_package_request("DELETE", f"/packages/{package_id}")
+
+
+@app.get("/api/system/about")
+async def api_system_about() -> dict:
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(f"{SYSTEM_HEALTH_URL}/api/system/about")
+        return JSONResponse(status_code=resp.status_code, content=resp.json())
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"system-health unavailable: {exc}") from exc
+
+
+@app.get("/api/system/health")
+async def api_system_health() -> dict:
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(f"{SYSTEM_HEALTH_URL}/api/system/health")
+        return JSONResponse(status_code=resp.status_code, content=resp.json())
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"system-health unavailable: {exc}") from exc
+
+
+@app.get("/api/system/version")
+async def api_system_version() -> dict:
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(f"{SYSTEM_HEALTH_URL}/api/system/version")
+        return JSONResponse(status_code=resp.status_code, content=resp.json())
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"system-health unavailable: {exc}") from exc
+
+
+@app.get("/api/system/first-boot-status")
+async def api_system_first_boot_status() -> dict:
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(f"{SYSTEM_HEALTH_URL}/api/system/first-boot-status")
+            if resp.status_code >= 500:
+                resp = await client.get(f"{OOBE_SERVICE_URL}/api/oobe/status")
+        return JSONResponse(status_code=resp.status_code, content=resp.json())
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"first-boot status unavailable: {exc}") from exc
+
+
+@app.post("/api/system/first-boot-complete")
+async def api_system_first_boot_complete() -> dict:
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(f"{SYSTEM_HEALTH_URL}/api/system/first-boot-complete")
+            if resp.status_code >= 500:
+                resp = await client.post(f"{OOBE_SERVICE_URL}/api/oobe/complete", json={
+                    "user": {"name": "Prady User", "username": "prady", "avatar": "A"},
+                    "ai": {"model": _active_model_id, "allow_cloud": False},
+                    "locale": {"timezone": "UTC", "language": "English", "keyboard": "US"},
+                })
+        return JSONResponse(status_code=resp.status_code, content=resp.json())
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"first-boot completion unavailable: {exc}") from exc
 
 
 @app.get("/health")

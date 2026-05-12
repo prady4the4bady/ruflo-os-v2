@@ -8,7 +8,7 @@ Prady OS is a privacy-first, AI-native desktop operating system distribution wit
 - Unified system health service endpoints for runtime and UI consumers
 - Release ISO build and signing pipeline
 - Multi-service local development stack
-- 708+ automated tests passing
+- 710 automated tests passing
 
 ## Core Components
 
@@ -48,7 +48,7 @@ bash -n build/iso/scripts/write_usb.sh
 ## Release Status
 
 - Version: v1.0.0
-- Validation: 708 passed, 2 skipped, 0 failed
+- Validation: 710 passed, 2 skipped, 0 failed
 - Gates: 9/10 automated gates verified in-session
 - Gate 10: manual Docker Desktop health smoke required on Windows host
 

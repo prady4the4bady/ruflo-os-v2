@@ -126,6 +126,11 @@ class ConfirmRequest(BaseModel):
     token: str
 
 
+class ExecuteRequest(BaseModel):
+    action: str
+    params: dict[str, Any] = Field(default_factory=dict)
+
+
 app = FastAPI(title="Kryos Computer Use Service", version="1.0.0")
 
 _confirm_tokens: dict[str, float] = {}
@@ -456,6 +461,36 @@ async def keyboard_hotkey(req: HotkeyRequest) -> dict[str, Any]:
 @app.post("/keyboard/key")
 async def keyboard_key(req: KeyRequest) -> dict[str, Any]:
     return _handle_keyboard_key(req)
+
+
+@app.post("/execute")
+async def execute(req: ExecuteRequest) -> dict[str, Any]:
+    action = req.action.strip().lower()
+    params = req.params or {}
+
+    try:
+        if action == "move":
+            _handle_move(MoveRequest(**params))
+        elif action == "click":
+            _handle_click(ClickRequest(**params))
+        elif action == "drag":
+            _handle_drag(DragRequest(**params))
+        elif action == "type":
+            _handle_keyboard_type(KeyboardTypeRequest(**params))
+        elif action == "hotkey":
+            _handle_keyboard_hotkey(HotkeyRequest(**params))
+        elif action == "key":
+            _handle_keyboard_key(KeyRequest(**params))
+        elif action == "scroll":
+            _handle_keyboard_key(KeyRequest(key=str(params.get("key", "pagedown"))))
+        else:
+            raise HTTPException(status_code=422, detail=f"unsupported action: {action}")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"invalid action payload: {exc}") from exc
+
+    return {"status": "success", "action": action}
 
 
 @app.post("/ocr/region")

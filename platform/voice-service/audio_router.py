@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 from dataclasses import dataclass
 
@@ -40,6 +41,8 @@ class AudioRouter:
         tts: TTSEngine,
     ):
         self.vyrex_url = vyrex_url
+        self.prax_agent_url = os.environ.get("PRAX_AGENT_URL", "http://agent-runtime:8100")
+        self.task_loop_enabled = os.environ.get("VOICE_TASK_LOOP_ENABLED", "false").lower() == "true"
         self.stt = stt
         self.tts = tts
 
@@ -72,33 +75,42 @@ class AudioRouter:
         if not stt_result.transcript:
             raise VoicePipelineError("No speech detected")
 
-        # ── Vyrex Agent ───────────────────────────────────────────────────
+        # ── Agent runtime task loop (optional) / chat completion fallback ─
         try:
             agent_start = time.time()
-            system = system_prompt or (
-                "You are Kryos, a helpful AI OS assistant. "
-                "Reply concisely in 1-2 sentences."
-            )
-
-            payload = {
-                "model": "active",
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": stt_result.transcript},
-                ],
-                "max_tokens": 150,
-                "stream": False,
-            }
-
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                resp = await client.post(
-                    f"{self.vyrex_url}/v1/chat/completions",
-                    json=payload,
+            if self.task_loop_enabled:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.post(
+                        f"{self.prax_agent_url}/tasks",
+                        json={
+                            "task_description": stt_result.transcript,
+                            "max_steps": 8,
+                        },
+                    )
+                    resp.raise_for_status()
+                    data = resp.json()
+                agent_response = data.get("message") or data.get("status", "done")
+                if not isinstance(agent_response, str) or not agent_response.strip():
+                    agent_response = "Done."
+            else:
+                system = system_prompt or (
+                    "You are Kryos, a helpful AI OS assistant. "
+                    "Reply concisely in 1-2 sentences."
                 )
-                resp.raise_for_status()
-                data = resp.json()
-
-            agent_response = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                payload = {
+                    "model": "active",
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": stt_result.transcript},
+                    ],
+                    "max_tokens": 150,
+                    "stream": False,
+                }
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.post(f"{self.vyrex_url}/v1/chat/completions", json=payload)
+                    resp.raise_for_status()
+                    data = resp.json()
+                agent_response = data.get("choices", [{}])[0].get("message", {}).get("content", "")
             agent_latency_ms = int((time.time() - agent_start) * 1000)
         except Exception as e:
             logger.error(f"Agent call failed: {e}")

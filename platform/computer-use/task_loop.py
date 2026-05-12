@@ -218,15 +218,13 @@ class TaskExecutor:
 
     async def _act(self, client: httpx.AsyncClient, action: str, params: dict[str, Any]) -> None:
         action = action.lower().strip()
-        if action == "click":
-            await client.post(f"{self.computer_url}/mouse/click", json=params)
-        elif action == "type":
-            await client.post(f"{self.computer_url}/keyboard/type", json=params)
-        elif action == "hotkey":
-            await client.post(f"{self.computer_url}/keyboard/hotkey", json=params)
-        elif action == "scroll":
-            key = params.get("key", "pagedown")
-            await client.post(f"{self.computer_url}/keyboard/key", json={"key": key})
+        response = await client.post(
+            f"{self.computer_url}/execute",
+            json={"action": action, "params": params},
+        )
+        if response.status_code >= 400:
+            detail = response.text[:200]
+            raise RuntimeError(f"computer execute failed ({response.status_code}): {detail}")
 
     async def _ingest_task_memory(self, task_description: str, result: str, duration_s: float, steps_taken: int) -> None:
         try:

@@ -24,3 +24,55 @@ lumyn-upstream/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime databases
+*.db
+*.db-shm
+*.db-wal
+
+# Runtime logs
+*.jsonl
+messages.jsonl
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Build artifacts
+build/iso/dist/
+*.iso
+*.sha256
+*.asc
+
+# Signing keys - NEVER commit private keys
+build/iso/signing-keys/MOK.key
+build/iso/signing-keys/MOK.crt
+build/iso/signing-keys/MOK.cer
+
+# Python venv
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

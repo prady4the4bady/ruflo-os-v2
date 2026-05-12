@@ -187,6 +187,7 @@ services:
       HARDWARE_INTEL_URL: http://hardware-intel:8019
       SDK_REGISTRY_URL: http://sdk-registry:8020
       SYSTEM_HEALTH_URL: http://system-health:8021
+      OOBE_SERVICE_URL: http://oobe-service:8099
     ports:
       - "8100:8100"
     volumes:
@@ -478,6 +479,8 @@ services:
     environment:
       PORT: 8012
       VYREX_URL: http://vyrex-proxy:8105
+      PRAX_AGENT_URL: http://agent-runtime:8100
+      VOICE_TASK_LOOP_ENABLED: "true"
       SECURITY_POLICY_URL: http://security-policy:8117
       AUDIT_LOG_URL: http://audit-log:8112
       AUTH_SERVICE_URL: http://auth-service:8013
