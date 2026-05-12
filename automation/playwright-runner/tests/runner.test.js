@@ -70,7 +70,7 @@ test("runTask returns structured results and closes resources", async () => {
       url: "https://example.com",
       actions: [
         { type: "click_selector", selector: "#btn" },
-        { type: "type_selector", selector: "#name", text: "prady" },
+        { type: "type_selector", selector: "#name", text: "kryos" },
         { type: "extract_text", selector: "h1" },
       ],
     },

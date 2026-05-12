@@ -1,0 +1,19 @@
+{
+  "name": "kryos-observability",
+  "description": "Structured logging, distributed tracing, and metrics — correlate agent swarm activity with application telemetry",
+  "version": "0.1.0",
+  "author": {
+    "name": "ruvnet",
+    "url": "https://github.com/ruvnet"
+  },
+  "homepage": "https://github.com/ruvnet/kryos",
+  "license": "MIT",
+  "keywords": [
+    "kryos",
+    "observability",
+    "logging",
+    "tracing",
+    "metrics",
+    "telemetry"
+  ]
+}

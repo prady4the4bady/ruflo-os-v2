@@ -1,0 +1,23 @@
+{
+  "name": "kryos-iot-cognitum",
+  "description": "IoT device lifecycle, telemetry anomaly detection, fleet management, and witness chain verification for Cognitum Seed hardware",
+  "version": "0.1.0",
+  "author": {
+    "name": "ruvnet",
+    "url": "https://github.com/ruvnet"
+  },
+  "homepage": "https://github.com/ruvnet/kryos",
+  "license": "MIT",
+  "keywords": [
+    "kryos",
+    "iot",
+    "cognitum",
+    "telemetry",
+    "anomaly-detection",
+    "fleet-management",
+    "witness-chain",
+    "device-trust",
+    "agentdb",
+    "sona"
+  ]
+}

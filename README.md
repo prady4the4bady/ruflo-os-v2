@@ -31,11 +31,11 @@ Prady OS is a privacy-first, AI-native desktop operating system distribution wit
 From repo root:
 
 ```powershell
-python -m pytest platform/ sdk/prady-sdk-python/tests build/iso/tests/ -W error::DeprecationWarning -q --tb=short
+python -m pytest platform/ sdk/kryos-sdk-python/tests build/iso/tests/ -W error::DeprecationWarning -q --tb=short
 Set-Location ui/desktop-shell
 npx --yes tsc --noEmit --strict
 npx --yes eslint src/ --ext .ts,.tsx --max-warnings 0
-Set-Location ../../sdk/prady-sdk
+Set-Location ../../sdk/kryos-sdk
 npx --yes tsc --noEmit --strict
 Set-Location ../../
 docker compose -f docker-compose.dev.yml config --quiet
@@ -66,3 +66,4 @@ See SECURITY.md for supported versions, reporting guidance, and hardening notes.
 ## License
 
 MIT. See LICENSE.
+

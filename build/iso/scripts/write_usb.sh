@@ -139,3 +139,4 @@ echo ""
 echo "  UEFI boot: Enable USB boot in your BIOS/UEFI firmware settings."
 echo "  Legacy boot: Press F12, F8, or DEL at startup to select USB."
 echo ""
+

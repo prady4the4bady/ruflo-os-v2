@@ -14,10 +14,10 @@ app.post('/api/save-keys', (req, res) => {
   const { nvidia_key, anthropic_key } = req.body;
   const content = `ANTHROPIC_API_KEY=${anthropic_key || ''}\nNVIDIA_API_KEY=${nvidia_key || ''}\n`;
   try {
-    if (!fs.existsSync('/etc/prady')) {
-      fs.mkdirSync('/etc/prady', { recursive: true });
+    if (!fs.existsSync('/etc/kryos')) {
+      fs.mkdirSync('/etc/kryos', { recursive: true });
     }
-    fs.writeFileSync('/etc/prady/api-keys.env', content);
+    fs.writeFileSync('/etc/kryos/api-keys.env', content);
     res.json({ success: true });
   } catch (err) {
     console.error("Failed to save keys:", err);

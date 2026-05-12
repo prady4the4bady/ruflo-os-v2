@@ -57,3 +57,4 @@ echo "[SIGN] SHA256: ${SHA256}"
 echo "[SIGN] Manifest: ${MANIFEST_FILE}"
 echo "[SIGN] Verification command:"
 echo "       sha256sum --check ${SHA_FILE}"
+

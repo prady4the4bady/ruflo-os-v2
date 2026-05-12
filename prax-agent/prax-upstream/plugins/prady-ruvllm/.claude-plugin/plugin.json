@@ -1,0 +1,19 @@
+{
+  "name": "kryos-ruvllm",
+  "description": "RuVLLM local inference with chat formatting, model configuration, and MicroLoRA fine-tuning",
+  "version": "0.1.0",
+  "author": {
+    "name": "ruvnet",
+    "url": "https://github.com/ruvnet"
+  },
+  "homepage": "https://github.com/ruvnet/kryos",
+  "license": "MIT",
+  "keywords": [
+    "kryos",
+    "ruvllm",
+    "llm",
+    "inference",
+    "microlora",
+    "fine-tuning"
+  ]
+}

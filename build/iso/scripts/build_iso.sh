@@ -235,3 +235,4 @@ elif [ "${SKIP_QEMU}" = "1" ]; then
 else
     warn "qemu-system-x86_64 not found — skipping boot test (install: sudo apt install qemu-system-x86)"
 fi
+

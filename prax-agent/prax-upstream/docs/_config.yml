@@ -1,0 +1,7 @@
+title: Prady Marketplace
+description: Claude Code native agents, swarms, workers, and MCP tools
+theme: jekyll-theme-minimal
+baseurl: /kryos
+url: https://ruvnet.github.io
+plugins:
+  - jekyll-seo-tag

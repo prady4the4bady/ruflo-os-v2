@@ -1,0 +1,19 @@
+{
+  "name": "kryos-aidefence",
+  "description": "AI safety scanning, PII detection, prompt injection defense, and adaptive threat learning",
+  "version": "0.1.0",
+  "author": {
+    "name": "ruvnet",
+    "url": "https://github.com/ruvnet"
+  },
+  "homepage": "https://github.com/ruvnet/kryos",
+  "license": "MIT",
+  "keywords": [
+    "kryos",
+    "aidefence",
+    "safety",
+    "pii",
+    "injection",
+    "security"
+  ]
+}

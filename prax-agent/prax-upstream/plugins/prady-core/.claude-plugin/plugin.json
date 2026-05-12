@@ -1,0 +1,17 @@
+{
+  "name": "kryos-core",
+  "description": "Core Kryos MCP tools, commands, and Claude Code orchestration patterns",
+  "version": "0.1.0",
+  "author": {
+    "name": "ruvnet",
+    "url": "https://github.com/ruvnet"
+  },
+  "homepage": "https://github.com/ruvnet/kryos",
+  "license": "MIT",
+  "keywords": [
+    "kryos",
+    "mcp",
+    "orchestration",
+    "claude-code"
+  ]
+}

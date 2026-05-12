@@ -102,7 +102,7 @@ services:
 
   kryos-swarm:
     build:
-      context: ./orchestration/prady-swarm
+      context: ./orchestration/kryos-swarm
     depends_on:
       - model-gateway
       - workflow-engine
@@ -629,3 +629,4 @@ volumes:
   hardware-intel-data:
   sdk-registry-data:
   sdk-apps-workspace:
+

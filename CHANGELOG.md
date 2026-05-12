@@ -54,3 +54,4 @@ All notable changes to this project are documented in this file.
 ### Notes
 
 - Gate 10 remains environment-dependent and must be executed manually on a host with Docker Desktop running.
+

@@ -274,17 +274,17 @@ class TestGate9NamingCompliance:
         matches = self._scan_python_files(REPO_ROOT, ["vyrex"])
         assert len(matches) == 0, f"Found vyrex references: {matches}"
 
-    def test_no_prady_os_in_service_files(self) -> None:
-        """No 'prady-os' references in platform services (renamed to 'Prady OS')."""
-        matches = self._scan_python_files(REPO_ROOT, ["prady-os"])
-        assert len(matches) == 0, f"Found prady-os references: {matches}"
+    def test_no_kryos_os_in_service_files(self) -> None:
+        """No 'kryos-os' references in platform services (renamed to 'Prady OS')."""
+        matches = self._scan_python_files(REPO_ROOT, ["kryos-os"])
+        assert len(matches) == 0, f"Found kryos-os references: {matches}"
 
     def test_no_lumyn_agent_in_service_files(self) -> None:
-        """No 'lumyn' references in platform services."""
-        matches = self._scan_python_files(REPO_ROOT, ["lumyn"])
-        assert len(matches) == 0, f"Found lumyn references: {matches}"
+        """No 'lumyn-agent' references in platform services."""
+        matches = self._scan_python_files(REPO_ROOT, ["lumyn-agent"])
+        assert len(matches) == 0, f"Found lumyn-agent references: {matches}"
 
-    def test_no_prady_agent_in_service_files(self) -> None:
+    def test_no_prax_agent_in_service_files(self) -> None:
         """No 'prax-agent' references in platform services."""
         matches = self._scan_python_files(REPO_ROOT, ["prax-agent"])
         assert len(matches) == 0, f"Found prax-agent references: {matches}"

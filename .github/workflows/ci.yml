@@ -106,8 +106,8 @@ jobs:
         working-directory: desktop/aqua-shell
         run: npm test
 
-  test-lumyn:
-    name: Phase 5 - lumyn
+  test-lumyn-agent:
+    name: Phase 5 - lumyn-agent
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -199,7 +199,7 @@ jobs:
       - test-workflow-engine
       - test-screen-agent
       - test-aqua-shell
-      - test-lumyn
+      - test-lumyn-agent
       - validate-compose
       - audit-python-deps
       - audit-node-deps

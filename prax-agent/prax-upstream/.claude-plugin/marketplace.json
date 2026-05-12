@@ -1,0 +1,170 @@
+{
+  "name": "kryos",
+  "description": "Prady Marketplace: Claude Code native agents, swarms, workers, and MCP tools for continuous software engineering",
+  "owner": {
+    "name": "ruvnet",
+    "url": "https://github.com/ruvnet"
+  },
+  "plugins": [
+    {
+      "name": "kryos-core",
+      "source": "./plugins/kryos-core",
+      "description": "Core Kryos MCP tools, commands, and Claude Code orchestration patterns"
+    },
+    {
+      "name": "kryos-swarm",
+      "source": "./plugins/kryos-swarm",
+      "description": "Agent teams, swarm coordination, Monitor streams, and worktree isolation"
+    },
+    {
+      "name": "kryos-loop-workers",
+      "source": "./plugins/kryos-loop-workers",
+      "description": "Cache-aware /loop workers and CronCreate background automation"
+    },
+    {
+      "name": "kryos-security-audit",
+      "source": "./plugins/kryos-security-audit",
+      "description": "Security review, dependency scanning, policy gates, and CVE monitoring"
+    },
+    {
+      "name": "kryos-rag-memory",
+      "source": "./plugins/kryos-rag-memory",
+      "description": "RuVector memory with HNSW search, AgentDB, and semantic retrieval"
+    },
+    {
+      "name": "kryos-testgen",
+      "source": "./plugins/kryos-testgen",
+      "description": "Test gap detection, coverage analysis, and automated test generation"
+    },
+    {
+      "name": "kryos-docs",
+      "source": "./plugins/kryos-docs",
+      "description": "Documentation generation, drift detection, and API docs automation"
+    },
+    {
+      "name": "kryos-autopilot",
+      "source": "./plugins/kryos-autopilot",
+      "description": "Autonomous /loop-driven task completion with learning, prediction, and progress tracking"
+    },
+    {
+      "name": "kryos-intelligence",
+      "source": "./plugins/kryos-intelligence",
+      "description": "Self-learning neural intelligence with SONA patterns, trajectory learning, and model routing"
+    },
+    {
+      "name": "prax-agentdb",
+      "source": "./plugins/prax-agentdb",
+      "description": "AgentDB memory controllers with HNSW vector search, RuVector embeddings, and causal graphs"
+    },
+    {
+      "name": "kryos-aidefence",
+      "source": "./plugins/kryos-aidefence",
+      "description": "AI safety scanning, PII detection, prompt injection defense, and adaptive threat learning"
+    },
+    {
+      "name": "kryos-browser",
+      "source": "./plugins/kryos-browser",
+      "description": "Agentic browser automation with Playwright for testing, scraping, and UI interaction"
+    },
+    {
+      "name": "kryos-jujutsu",
+      "source": "./plugins/kryos-jujutsu",
+      "description": "Advanced git workflows with diff analysis, risk scoring, and reviewer recommendations"
+    },
+    {
+      "name": "kryos-wasm",
+      "source": "./plugins/kryos-wasm",
+      "description": "Sandboxed WASM agent creation, execution, and gallery sharing"
+    },
+    {
+      "name": "kryos-workflows",
+      "source": "./plugins/kryos-workflows",
+      "description": "Visual workflow automation with templates, orchestration, and lifecycle management"
+    },
+    {
+      "name": "kryos-daa",
+      "source": "./plugins/kryos-daa",
+      "description": "Dynamic Agentic Architecture with cognitive patterns, knowledge sharing, and adaptive agents"
+    },
+    {
+      "name": "kryos-ruvllm",
+      "source": "./plugins/kryos-ruvllm",
+      "description": "RuVLLM local inference with chat formatting, MicroLoRA fine-tuning, and SONA adaptation"
+    },
+    {
+      "name": "kryos-rvf",
+      "source": "./plugins/kryos-rvf",
+      "description": "RVF format for portable agent memory, session persistence, and cross-platform transfer"
+    },
+    {
+      "name": "kryos-plugin-creator",
+      "source": "./plugins/kryos-plugin-creator",
+      "description": "Scaffold, validate, and publish new Claude Code plugins with proper structure"
+    },
+    {
+      "name": "kryos-goals",
+      "source": "./plugins/kryos-goals",
+      "description": "Long-horizon goal planning, deep research orchestration, and adaptive replanning using GOAP"
+    },
+    {
+      "name": "kryos-adr",
+      "source": "./plugins/kryos-adr",
+      "description": "ADR lifecycle management — create, index, supersede, and link Architecture Decision Records to code"
+    },
+    {
+      "name": "kryos-cost-tracker",
+      "source": "./plugins/kryos-cost-tracker",
+      "description": "Token usage tracking, model cost attribution per agent, budget alerts, and optimization recommendations"
+    },
+    {
+      "name": "kryos-ddd",
+      "source": "./plugins/kryos-ddd",
+      "description": "Domain-Driven Design scaffolding — bounded contexts, aggregate roots, domain events, and anti-corruption layers"
+    },
+    {
+      "name": "kryos-federation",
+      "source": "./plugins/kryos-federation",
+      "description": "Cross-installation agent federation with zero-trust security, PII-gated data flow, and compliance-grade audit trails"
+    },
+    {
+      "name": "kryos-iot-cognitum",
+      "source": "./plugins/kryos-iot-cognitum",
+      "description": "IoT device lifecycle, telemetry anomaly detection, fleet management, and witness chain verification for Cognitum Seed hardware"
+    },
+    {
+      "name": "kryos-knowledge-graph",
+      "source": "./plugins/kryos-knowledge-graph",
+      "description": "Knowledge graph construction — entity extraction, relation mapping, and pathfinder graph traversal"
+    },
+    {
+      "name": "kryos-market-data",
+      "source": "./plugins/kryos-market-data",
+      "description": "Market data ingestion — feed normalization, OHLCV vectorization, and HNSW-indexed pattern matching"
+    },
+    {
+      "name": "kryos-migrations",
+      "source": "./plugins/kryos-migrations",
+      "description": "Schema migration management — generate, validate, dry-run, and rollback database migrations"
+    },
+    {
+      "name": "kryos-neural-trader",
+      "source": "./plugins/kryos-neural-trader",
+      "description": "Neural trading strategies — self-learning LSTM/Transformer/N-BEATS models with Rust/NAPI backtesting"
+    },
+    {
+      "name": "kryos-observability",
+      "source": "./plugins/kryos-observability",
+      "description": "Structured logging, distributed tracing, and metrics — correlate agent swarm activity with application telemetry"
+    },
+    {
+      "name": "kryos-ruvector",
+      "source": "./plugins/kryos-ruvector",
+      "description": "Self-learning vector database — HNSW, FlashAttention-3, Graph RAG, hybrid search, DiskANN, and Brain AGI"
+    },
+    {
+      "name": "kryos-sparc",
+      "source": "./plugins/kryos-sparc",
+      "description": "SPARC methodology — Specification, Pseudocode, Architecture, Refinement, Completion phases with quality gates"
+    }
+  ]
+}
