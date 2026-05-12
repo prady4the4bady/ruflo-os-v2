@@ -148,6 +148,32 @@ jobs:
         working-directory: agents/lumyn
         run: pytest tests -v
 
+  test-kryos-researcher:
+    name: Phase 6 - kryos-researcher
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: platform/kryos-researcher/requirements-dev.txt
+
+      - name: Install dependencies
+        working-directory: platform/kryos-researcher
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run tests
+        working-directory: platform/kryos-researcher
+        run: pytest tests -v
+
   validate-compose:
     name: Validate docker-compose configuration
     runs-on: ubuntu-latest
@@ -207,6 +233,12 @@ jobs:
           pip-audit --requirement requirements.txt --no-deps || \
             echo "::notice title=pip-audit::agents/lumyn has advisories (see log)"
 
+      - name: Audit platform/kryos-researcher
+        working-directory: platform/kryos-researcher
+        run: |
+          pip-audit --requirement requirements.txt --no-deps || \
+            echo "::notice title=pip-audit::platform/kryos-researcher has advisories (see log)"
+
   audit-node-deps:
     name: Audit Node.js dependencies
     runs-on: ubuntu-latest
@@ -236,6 +268,7 @@ jobs:
       - test-screen-agent
       - test-aqua-shell
       - test-lumyn-agent
+      - test-kryos-researcher
       - validate-compose
       - audit-python-deps
       - audit-node-deps

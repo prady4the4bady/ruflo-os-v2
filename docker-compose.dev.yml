@@ -611,6 +611,28 @@ services:
       - notification-bus
     restart: unless-stopped
 
+  kryos-researcher:
+    build:
+      context: ./platform/kryos-researcher
+    ports:
+      - "8120:8120"
+    environment:
+      DATA_DIR: /data
+      NOTIFICATION_BUS_URL: http://notification-bus:8111
+      MEMORY_SERVICE_URL: http://memory-service:8108
+      MODEL_GATEWAY_URL: http://model-gateway:8000
+      RESEARCH_ENABLED: "${RESEARCH_ENABLED:-true}"
+      RESEARCH_INTERVAL_MIN: "${RESEARCH_INTERVAL_MIN:-60}"
+      PROPOSAL_INTERVAL_MIN: "${PROPOSAL_INTERVAL_MIN:-240}"
+      DAILY_PROPOSAL_BUDGET: "${DAILY_PROPOSAL_BUDGET:-3}"
+      LUMYN_PROPOSAL_MODEL: "${LUMYN_PROPOSAL_MODEL:-llama3.2:3b}"
+    volumes:
+      - kryos-researcher-data:/data
+    depends_on:
+      - notification-bus
+      - model-gateway
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   chromadb_data:
@@ -636,4 +658,5 @@ volumes:
   hardware-intel-data:
   sdk-registry-data:
   sdk-apps-workspace:
+  kryos-researcher-data:
 
