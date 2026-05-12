@@ -6,13 +6,38 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List
 
+import pytest
 import requests
 
 ORCHESTRATION_BASE = os.getenv("ORCHESTRATION_BASE_URL", "http://127.0.0.1:11431")
+MODEL_GATEWAY_BASE = os.getenv("MODEL_GATEWAY_URL", "http://127.0.0.1:11430")
 ACTIVITY_LOG_PATH = Path(
     os.getenv("E2E_ACTIVITY_LOG", "orchestration/workflow-engine/logs/activity.jsonl")
 )
 DESKTOP_OUTPUT = Path.home() / "Desktop" / "top-story.txt"
+
+
+def _llm_backend_available() -> bool:
+    """Probe the model-gateway with a tiny chat request.
+
+    A full end-to-end run requires a real LLM (Ollama or cloud backend).
+    When the gateway returns 503 (no backend reachable) we skip the test
+    rather than fail — CI environments without GPU/Ollama should still
+    pass the workflow.
+    """
+    try:
+        resp = requests.post(
+            f"{MODEL_GATEWAY_BASE}/v1/chat/completions",
+            json={
+                "model": "llama3.2:3b",
+                "messages": [{"role": "user", "content": "ping"}],
+                "max_tokens": 1,
+            },
+            timeout=5,
+        )
+    except requests.RequestException:
+        return False
+    return resp.status_code < 500
 
 
 def _read_activity_events(task_id: str) -> List[Dict[str, Any]]:
@@ -49,6 +74,14 @@ def _wait_for_task(task_id: str, timeout_seconds: int = 180) -> Dict[str, Any]:
 
 
 def test_hn_top_story_goal_end_to_end() -> None:
+    if not _llm_backend_available():
+        pytest.skip(
+            "No LLM backend reachable at "
+            f"{MODEL_GATEWAY_BASE} (model-gateway returned 5xx or no "
+            "response). Start Ollama or set MODEL_GATEWAY_URL to a real "
+            "backend to run the full end-to-end flow."
+        )
+
     DESKTOP_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     if DESKTOP_OUTPUT.exists():
         DESKTOP_OUTPUT.unlink()
