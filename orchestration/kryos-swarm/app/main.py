@@ -109,6 +109,16 @@ async def healthz() -> Dict[str, Any]:
     return {"status": "ok", "service": "kryos-swarm"}
 
 
+@app.get("/health", tags=["meta"])
+async def health() -> Dict[str, Any]:
+    return {"status": "ok", "service": "kryos-swarm", "version": "1.0.0"}
+
+
+@app.get("/", tags=["meta"])
+async def root() -> Dict[str, Any]:
+    return {"service": "kryos-swarm", "version": "1.0.0"}
+
+
 @app.post(
     "/swarm/start",
     response_model=StartSwarmResponse,
@@ -321,9 +331,16 @@ import json as _json
 
 from fastapi.responses import StreamingResponse
 
-_PLATFORM_PATH = str(
-    __import__("pathlib").Path(__file__).resolve().parents[3] / "platform"
+_PLATFORM_PATH = os.getenv(
+    "PLATFORM_PATH",
+    "/opt/kryos-os/platform",
 )
+try:
+    _candidate = __import__("pathlib").Path(__file__).resolve().parents[3] / "platform"
+    if _candidate.exists():
+        _PLATFORM_PATH = str(_candidate)
+except IndexError:
+    pass
 
 
 def _add_platform() -> None:

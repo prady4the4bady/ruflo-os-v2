@@ -101,6 +101,16 @@ def _build_app() -> FastAPI:
 app = _build_app()
 
 
+@app.get("/health")
+async def health() -> dict:
+    return {"status": "ok", "service": "model-manager", "version": "1.0.0"}
+
+
+@app.get("/")
+async def root() -> dict:
+    return {"service": "model-manager", "version": "1.0.0"}
+
+
 def create_app() -> FastAPI:
     return app
 

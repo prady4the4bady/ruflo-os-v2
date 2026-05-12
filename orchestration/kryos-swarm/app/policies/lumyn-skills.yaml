@@ -1,0 +1,28 @@
+version: 1
+name: lumyn-skills-sandbox-policy
+terms:
+  - include: lumyn-skills-sandbox-policy
+
+egress:
+  allow_domains:
+    - api.nousresearch.com
+    - huggingface.co
+
+filesystem:
+  deny_write_outside:
+    - /tmp/lumyn-sandbox/
+  allow_read:
+    - /opt/kryos-os/models/
+    - /tmp/lumyn-sandbox/
+
+network:
+  default: deny
+  allow_domains:
+    - api.nousresearch.com
+    - huggingface.co
+
+notes:
+  - Sandboxed execution policy for Lumyn (Lumyn) skill factory.
+  - Skills may write only to /tmp/lumyn-sandbox/.
+  - Read access to /opt/kryos-os/models/ for local model inference.
+  - All other outbound network traffic is denied.

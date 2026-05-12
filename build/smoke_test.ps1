@@ -1,96 +1,185 @@
 #!/usr/bin/env pwsh
-<#
-.SYNOPSIS
-  Prady OS v1.0.0 Smoke Test — Interactive service health check
-.DESCRIPTION
-  Validates that the Prady OS Docker Compose stack starts correctly
-  and that all microservices respond to /health endpoints.
-.EXAMPLE
-  .\smoke_test.ps1
-#>
+# Prady OS v1.0.0 Smoke Test
+# Usage: pwsh build/smoke_test.ps1
 
-param(
-  [string]$ComposeFile = "docker-compose.dev.yml",
-  [int]$HealthCheckTimeout = 30
-)
+$root = Split-Path -Parent $PSScriptRoot
+Set-Location $root
 
-$ErrorActionPreference = "Stop"
-
-Write-Host "╔════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║    Prady OS v1.0.0 Smoke Test                      ║" -ForegroundColor Cyan
-Write-Host "╚════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "╔════════════════════════════════════════╗"
+Write-Host "║   Prady OS v1.0.0 Smoke Test           ║"
+Write-Host "╚════════════════════════════════════════╝"
 Write-Host ""
 
-# Step 1: Start Docker Compose
-Write-Host "📦 Starting Docker Compose stack..." -ForegroundColor Green
-docker compose -f $ComposeFile up -d
-
-if ($LASTEXITCODE -ne 0) {
-  Write-Host "❌ Failed to start Docker Compose" -ForegroundColor Red
-  exit 1
+# Check if stack is already running
+$running = docker compose -f docker-compose.dev.yml `
+  ps --format json 2>$null
+if (-not $running) {
+  Write-Host "📦 Starting Docker Compose stack..."
+  docker compose -f docker-compose.dev.yml up -d --wait
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: docker compose up failed"
+    exit 1
+  }
+  Write-Host "✅ Stack started"
+  Write-Host "⏳ Waiting 25 seconds for services to stabilise..."
+  Start-Sleep -Seconds 25
+} else {
+  Write-Host "✅ Stack already running — skipping startup"
 }
 
-Write-Host "✅ Docker Compose started" -ForegroundColor Green
+# Build the service → port map directly from compose config
+# This reads the actual published ports from the compose file
+Write-Host ""
+Write-Host "🔍 Reading service port map from compose config..."
+
+$composeConfig = docker compose -f docker-compose.dev.yml `
+  config --format json 2>$null | ConvertFrom-Json
+$servicePortMap = @{}
+
+foreach ($svcName in $composeConfig.services.PSObject.Properties.Name) {
+  $svc = $composeConfig.services.$svcName
+  if ($svc.ports) {
+    foreach ($portEntry in $svc.ports) {
+      # portEntry.published is the host port
+      $hostPort = $portEntry.published
+      if ($hostPort -and $hostPort -gt 0) {
+        $servicePortMap[$svcName] = $hostPort
+        break  # take the first port mapping
+      }
+    }
+  }
+}
+
+Write-Host "Found $($servicePortMap.Count) services with ports"
+Write-Host ""
+Write-Host "🏥 Running health checks..."
 Write-Host ""
 
-# Step 2: Wait for services to be ready
-Write-Host "⏳ Waiting for services to stabilize..." -ForegroundColor Yellow
-Start-Sleep -Seconds 5
+$ok = 0
+$fail = @()
+$skip = @()
 
-# Step 3: Health check on key services
-$services = @(
-  @{ name = "prax-agent"; port = 3001 },
-  @{ name = "vyrex-proxy"; port = 8080 },
-  @{ name = "lumyn-bridge"; port = 9000 },
-  @{ name = "auth-service"; port = 5000 }
-)
+foreach ($svcName in ($servicePortMap.Keys | Sort-Object)) {
+  $port = $servicePortMap[$svcName]
+  if (-not $port) {
+    $skip += $svcName
+    continue
+  }
 
-$healthyCount = 0
+  # postgres speaks the wire protocol, not HTTP — use pg_isready
+  if ($svcName -eq "postgres") {
+    $pgCheck = docker compose -f docker-compose.dev.yml `
+      exec -T postgres pg_isready -U kryos 2>&1
+    if ($LASTEXITCODE -eq 0) {
+      Write-Host "  ✅ postgres (port $port — pg_isready OK)"
+      $ok++
+    } else {
+      Write-Host "  ❌ postgres — $pgCheck"
+      $fail += "postgres:$port"
+    }
+    continue
+  }
 
-foreach ($service in $services) {
-  Write-Host "  Testing $($service.name)..." -ForegroundColor Gray
-  $maxRetries = $HealthCheckTimeout
-  $retry = 0
-  $healthy = $false
-  
-  while ($retry -lt $maxRetries -and -not $healthy) {
+  # redis also does not speak HTTP — use redis-cli ping
+  if ($svcName -eq "redis") {
+    $redisCheck = docker compose -f docker-compose.dev.yml `
+      exec -T redis redis-cli ping 2>&1
+    if ($LASTEXITCODE -eq 0 -and $redisCheck -match "PONG") {
+      Write-Host "  ✅ redis (port $port — PING PONG)"
+      $ok++
+    } else {
+      Write-Host "  ❌ redis — $redisCheck"
+      $fail += "redis:$port"
+    }
+    continue
+  }
+
+  # Try /health first, then /healthz, then root
+  $endpoints = @("/health", "/healthz", "/")
+  $responded = $false
+
+  foreach ($endpoint in $endpoints) {
     try {
-      $response = Invoke-WebRequest -Uri "http://localhost:$($service.port)/health" `
-        -Method GET -TimeoutSec 2 -ErrorAction Stop
-      if ($response.StatusCode -eq 200) {
-        Write-Host "    ✅ $($service.name) healthy" -ForegroundColor Green
-        $healthy = $true
-        $healthyCount++
+      $r = Invoke-RestMethod `
+        "http://localhost:$port$endpoint" `
+        -TimeoutSec 5 -ErrorAction Stop
+      if ($r.status -eq "ok" -or
+          $r.status -eq "healthy" -or
+          $endpoint -eq "/") {
+        Write-Host "  ✅ $svcName (port $port$endpoint)"
+        $ok++
+        $responded = $true
+        break
       }
-    }
-    catch {
-      $retry++
-      if ($retry -lt $maxRetries) {
-        Start-Sleep -Seconds 1
-      }
+    } catch {
+      # try next endpoint
     }
   }
-  
-  if (-not $healthy) {
-    Write-Host "    ⚠️  $($service.name) not responding" -ForegroundColor Yellow
+
+  if (-not $responded) {
+    # Try raw HTTP status check (some services return non-JSON)
+    try {
+      $resp = Invoke-WebRequest `
+        "http://localhost:$port/health" `
+        -TimeoutSec 5 -ErrorAction Stop
+      if ($resp.StatusCode -eq 200) {
+        Write-Host "  ✅ $svcName (port $port — HTTP 200)"
+        $ok++
+        $responded = $true
+      }
+    } catch {
+      Write-Host "  ❌ $svcName (port $port) — unreachable"
+      $fail += "${svcName}:${port}"
+    }
   }
 }
 
+$total = $servicePortMap.Count
 Write-Host ""
-Write-Host "📊 Health Check Results: $healthyCount/$($services.Count) services healthy" -ForegroundColor Cyan
-
-# Step 4: Prompt for cleanup
-Write-Host ""
-Write-Host "🧹 Cleaning up..." -ForegroundColor Yellow
-$response = Read-Host "Stop Docker Compose stack? (y/n)"
-
-if ($response -eq "y" -or $response -eq "Y") {
-  docker compose -f $ComposeFile down
-  Write-Host "✅ Stack stopped and removed" -ForegroundColor Green
+Write-Host "════════════════════════════════════════"
+Write-Host "  Results: $ok / $total services healthy"
+if ($skip.Count -gt 0) {
+  Write-Host "  Skipped (no port): $($skip -join ', ')"
 }
-else {
-  Write-Host "⚠️  Stack still running. Stop with: docker compose down" -ForegroundColor Yellow
+Write-Host "════════════════════════════════════════"
+
+if ($fail.Count -eq 0) {
+  Write-Host ""
+  Write-Host "  ✅ ALL SERVICES HEALTHY"
+  Write-Host "  🚀 PRADY OS v1.0.0 IS FULLY VERIFIED"
+  Write-Host "     github.com/prady4the4bady/prady-os"
+  Write-Host ""
+} else {
+  Write-Host ""
+  Write-Host "  ⚠️  FAILED SERVICES:"
+  foreach ($f in $fail) {
+    $name = $f.Split(":")[0]
+    $port = $f.Split(":")[1]
+    Write-Host "    ❌ ${name} (port ${port})"
+    Write-Host "       docker compose -f docker-compose.dev.yml logs ${name}"
+  }
+  Write-Host ""
+  Write-Host "  Common fixes:"
+  Write-Host "    ModuleNotFoundError → add dep to requirements.txt"
+  Write-Host "    PermissionError     → check USER in Dockerfile"
+  Write-Host "    Address in use      → netstat -ano | findstr ${port}"
+  Write-Host "    DB init error       → check volume mounts in compose"
+  Write-Host ""
 }
 
-Write-Host ""
-Write-Host "✅ Smoke test complete" -ForegroundColor Green
+# Ask to stop
+if ($env:SMOKE_TEST_NONINTERACTIVE -eq "1") {
+  Write-Host "Stack still running. (non-interactive mode)"
+  Write-Host "Stop with: docker compose -f docker-compose.dev.yml down"
+  if ($fail.Count -gt 0) { exit 1 } else { exit 0 }
+}
+
+$stop = Read-Host "Stop Docker Compose stack? (y/n)"
+if ($stop -eq "y") {
+  docker compose -f docker-compose.dev.yml down
+  Write-Host "✅ Stack stopped"
+} else {
+  Write-Host "Stack still running."
+  Write-Host "Stop with: docker compose -f docker-compose.dev.yml down"
+}

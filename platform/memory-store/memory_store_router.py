@@ -1,4 +1,4 @@
-"""Standalone FastAPI router for MemoryStore (no relative imports)."""
+"""Standalone FastAPI app for MemoryStore (no relative imports)."""
 from __future__ import annotations
 
 import sys
@@ -10,7 +10,7 @@ if str(_DIR) not in sys.path:
 
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
 
 from memory_store import MemoryStore  # type: ignore[import-not-found]
@@ -61,3 +61,19 @@ async def delete_memory(memory_id: str) -> Dict[str, Any]:
 @router.get("/memory/stats")
 async def memory_stats() -> Dict[str, Any]:
     return await _ms().stats()
+
+
+app = FastAPI(title="Kryos Memory Store", version="1.0.0")
+
+
+@app.get("/health")
+async def health() -> Dict[str, Any]:
+    return {"status": "ok", "service": "memory-store", "version": "1.0.0"}
+
+
+@app.get("/")
+async def root() -> Dict[str, Any]:
+    return {"service": "memory-store", "version": "1.0.0"}
+
+
+app.include_router(router)

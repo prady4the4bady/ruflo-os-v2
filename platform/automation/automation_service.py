@@ -25,6 +25,17 @@ if str(_ROOT) not in sys.path:
 
 app = FastAPI(title="Kryos Automation Service", version="1.0.0")
 
+
+@app.get("/health")
+async def health() -> dict[str, Any]:
+    return {"status": "ok", "service": "automation-service", "version": "1.0.0"}
+
+
+@app.get("/")
+async def root() -> dict[str, Any]:
+    return {"service": "automation-service", "version": "1.0.0"}
+
+
 DEFAULT_POLICY_PATH = _ROOT / "vyrex" / "policies" / "screen_control.yaml"
 _action_timestamps: deque[float] = deque()
 

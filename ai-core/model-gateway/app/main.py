@@ -122,6 +122,21 @@ app.add_middleware(CorrelationIDMiddleware)
 
 
 # ---------------------------------------------------------------------------
+# Health
+# ---------------------------------------------------------------------------
+
+
+@app.get("/health")
+async def health() -> dict:
+    return {"status": "ok", "service": "model-gateway", "version": "1.0.0"}
+
+
+@app.get("/")
+async def root() -> dict:
+    return {"service": "model-gateway", "version": "1.0.0"}
+
+
+# ---------------------------------------------------------------------------
 # Exception handlers
 # ---------------------------------------------------------------------------
 

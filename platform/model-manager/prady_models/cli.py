@@ -62,7 +62,10 @@ def set_default(model_id: str, capability: str = typer.Option(..., "--capability
 
 
 @app.command("serve")
-def serve(host: str = "127.0.0.1", port: int = 11432) -> None:
+def serve(
+    host: str = typer.Option("127.0.0.1", "--host"),
+    port: int = typer.Option(11432, "--port"),
+) -> None:
     run_web(host=host, port=port)
 
 

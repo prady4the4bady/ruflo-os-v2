@@ -1,4 +1,4 @@
-"""Standalone FastAPI router for ProcessManager (no relative imports)."""
+"""Standalone FastAPI app for ProcessManager (no relative imports)."""
 from __future__ import annotations
 
 import sys
@@ -11,7 +11,7 @@ if str(_DIR) not in sys.path:
 
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
 
 from process_manager import ProcessHandle, ProcessInfo, ProcessManager, WindowInfo  # type: ignore[import-not-found]
@@ -56,3 +56,19 @@ async def kill_process(pid: int) -> Dict[str, Any]:
 @router.get("/processes/windows")
 async def get_windows() -> Dict[str, Any]:
     return {"windows": [w.to_dict() for w in _mgr().get_open_windows()]}
+
+
+app = FastAPI(title="Kryos Process Manager", version="1.0.0")
+
+
+@app.get("/health")
+async def health() -> Dict[str, Any]:
+    return {"status": "ok", "service": "process-manager", "version": "1.0.0"}
+
+
+@app.get("/")
+async def root() -> Dict[str, Any]:
+    return {"service": "process-manager", "version": "1.0.0"}
+
+
+app.include_router(router)

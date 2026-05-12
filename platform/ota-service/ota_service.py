@@ -75,6 +75,16 @@ app = FastAPI(title="Kryos OTA Service", version="1.0.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
+@app.get("/health")
+async def health() -> dict[str, Any]:
+    return {"status": "ok", "service": "ota-service", "version": "1.0.0"}
+
+
+@app.get("/")
+async def root() -> dict[str, Any]:
+    return {"service": "ota-service", "version": "1.0.0"}
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 

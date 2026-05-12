@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "-m", "prady_models.cli", "serve", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "prady_models.platform_api:app", "--host", "0.0.0.0", "--port", "8000"]

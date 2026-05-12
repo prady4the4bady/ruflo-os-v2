@@ -11,9 +11,12 @@ RUN apt-get update && apt-get install -y \
     chmod +x /root/.prady/bin/piper
 
 WORKDIR /app
-COPY requirements.txt .
+COPY voice-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY voice-service/ /app
+COPY shared /app/shared
+
+ENV PYTHONPATH=/app:/app/shared
 
 CMD ["uvicorn", "voice_service:app", "--host", "0.0.0.0", "--port", "8012"]

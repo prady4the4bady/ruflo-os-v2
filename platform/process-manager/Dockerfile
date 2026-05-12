@@ -6,4 +6,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY process_manager.py process_manager_router.py ./
-CMD ["python", "-m", "uvicorn", "process_manager_router:router", "--host", "0.0.0.0", "--port", "8093"]
+CMD ["python", "-m", "uvicorn", "process_manager_router:app", "--host", "0.0.0.0", "--port", "8093"]

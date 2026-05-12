@@ -12,9 +12,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy runtime source
 COPY platform/agent-runtime/agent_api.py ./agent_api.py
-COPY vyrex/runtime /app/vyrex/runtime/
-COPY vyrex/policies /app/vyrex/policies/
+COPY vyrex /app/vyrex
 RUN touch /app/vyrex/__init__.py /app/vyrex/runtime/__init__.py
+
+# Pull task_loop module from computer-use so agent_api can import it
+COPY platform/computer-use/task_loop.py /app/task_loop.py
+
+ENV PYTHONPATH=/app
 
 EXPOSE 8100
 

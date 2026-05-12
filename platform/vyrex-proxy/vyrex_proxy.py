@@ -45,6 +45,16 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Vyrex Inference Proxy", version=PROXY_VERSION)
 
+
+@app.get("/health")
+async def health() -> dict[str, Any]:
+    return {"status": "ok", "service": "vyrex-proxy", "version": PROXY_VERSION}
+
+
+@app.get("/")
+async def root() -> dict[str, Any]:
+    return {"service": "vyrex-proxy", "version": PROXY_VERSION}
+
 # ── metrics store ─────────────────────────────────────────────────────────────
 @dataclass
 class RequestRecord:

@@ -81,7 +81,7 @@ services:
   model-manager:
     build:
       context: ./platform/model-manager
-    command: ["python", "-m", "prady_models.cli", "serve", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["uvicorn", "prady_models.platform_api:app", "--host", "0.0.0.0", "--port", "8000"]
     depends_on:
       - postgres
     environment:
@@ -186,7 +186,8 @@ services:
 
   watchdog:
     build:
-      context: ./platform/watchdog
+      context: ./platform
+      dockerfile: watchdog/Dockerfile
     ports:
       - "8115:8115"
     environment:
@@ -211,7 +212,8 @@ services:
 
   package-manager:
     build:
-      context: ./platform/package-manager
+      context: ./platform
+      dockerfile: package-manager/Dockerfile
     ports:
       - "8116:8116"
     environment:
@@ -301,7 +303,8 @@ services:
 
   voice-service:
     build:
-      context: ./platform/voice-service
+      context: ./platform
+      dockerfile: voice-service/Dockerfile
     restart: unless-stopped
     ports:
       - "8014:8012"
@@ -489,7 +492,8 @@ services:
 
   vyrex-proxy:
     build:
-      context: ./platform/vyrex-proxy
+      context: ./platform
+      dockerfile: vyrex-proxy/Dockerfile
     environment:
       OLLAMA_URL: http://model-gateway:8000
       DEFAULT_MODEL: llama3
@@ -527,7 +531,8 @@ services:
 
   task-scheduler:
     build:
-      context: ./platform/task-scheduler
+      context: ./platform
+      dockerfile: task-scheduler/Dockerfile
     ports:
       - "8110:8110"
     environment:
@@ -569,7 +574,8 @@ services:
 
   model-hub:
     build:
-      context: ./platform/model-hub
+      context: ./platform
+      dockerfile: model-hub/Dockerfile
     ports:
       - "8113:8113"
     environment:
@@ -588,7 +594,8 @@ services:
 
   persona-service:
     build:
-      context: ./platform/persona-service
+      context: ./platform
+      dockerfile: persona-service/Dockerfile
     ports:
       - "8114:8114"
     environment:
