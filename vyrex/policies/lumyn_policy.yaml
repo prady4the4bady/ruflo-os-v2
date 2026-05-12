@@ -1,0 +1,20 @@
+name: lumyn-policy
+version: "1.0"
+terms:
+  - include: lumyn-policy
+allowed_task_types:
+  - general
+  - automation
+  - research
+blocked_keywords:
+  - exfiltrate
+  - ransomware
+  - keylogger
+max_task_duration_s: 120
+require_user_confirmation_for:
+  - file_delete
+  - network_exfil
+model_sources_allowed:
+  - huggingface
+  - github
+  - ollama

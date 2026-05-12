@@ -6,7 +6,7 @@ Environment variables (all optional):
   OLLAMA_BASE_URL      - override the Ollama base URL
   GATEWAY_ROUTING_MODE - override routing mode at runtime
   VYREX_ENABLED     - enable Vyrex middleware (default: false)
-  VYREX_ENDPOINT    - NemoShell endpoint URL (default: http://localhost:8000)
+  VYREX_ENDPOINT    - Vyrex endpoint URL (default: http://localhost:8000)
   HUGGINGFACE_TOKEN    - token for private/model-gated HF pulls
   MODEL_STORAGE_DIR    - local path for pulled models (default: /opt/kryos/models)
 """

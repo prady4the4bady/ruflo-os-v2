@@ -85,3 +85,16 @@ desktop.ini
 .automation-service-build.log
 .focused-build.log
 .voice-service-build.log
+
+# Audit and transient test output
+audit_results/
+test_agent-runtime.txt
+test_computer-use.txt
+test_model-manager.txt
+test_notification-bus.txt
+test_oobe.txt
+test_results.txt
+test_results_agentnet.txt
+test_soul.txt
+tmp-exec-output.txt
+watch_*.txt
