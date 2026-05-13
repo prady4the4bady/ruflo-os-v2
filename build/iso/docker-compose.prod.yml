@@ -311,7 +311,7 @@ services:
 
   bot-bridge:
     image: kryos/bot-bridge:1.0.0
-    restart: on-failure
+    restart: always
     mem_limit: 512m
     logging: *default-logging
     networks:
@@ -748,7 +748,7 @@ services:
 
   loop-runner:
     image: kryos/loop-runner:1.0.0
-    restart: on-failure
+    restart: always
     mem_limit: 512m
     logging: *default-logging
     networks:
@@ -772,7 +772,7 @@ services:
 
   oobe-service:
     image: kryos/oobe-service:1.0.0
-    restart: on-failure
+    restart: always
     mem_limit: 512m
     logging: *default-logging
     networks:
@@ -806,7 +806,7 @@ services:
 
   automation-service:
     image: kryos/automation-service:1.0.0
-    restart: on-failure
+    restart: always
     mem_limit: 512m
     logging: *default-logging
     networks:
