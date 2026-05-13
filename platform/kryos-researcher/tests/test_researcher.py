@@ -268,6 +268,10 @@ async def test_run_proposal_cycle_emits_proposal_and_notification(
         f"{researcher_module.MODEL_GATEWAY_URL}/v1/chat/completions"
     ).mock(return_value=Response(200, json=proposal_payload))
 
+    respx.post(
+        f"{researcher_module.PROPOSAL_GATE_URL}/proposal"
+    ).mock(return_value=Response(201, json={"id": "gate-xyz"}))
+
     respx.post(f"{researcher_module.NOTIFICATION_BUS_URL}/notify").mock(
         return_value=Response(201, json={"id": "notif-abc"})
     )
@@ -276,6 +280,8 @@ async def test_run_proposal_cycle_emits_proposal_and_notification(
     assert proposal is not None
     assert proposal.title == "Tiny graph benchmark"
     assert proposal.plan == ["Fork X", "Wire Y", "Measure Z"]
+    # Gate id replaces the locally generated uuid.
+    assert proposal.id == "gate-xyz"
     # Notification should have been emitted.
     notify_call = respx.calls.last
     assert notify_call.request.url.path == "/notify"

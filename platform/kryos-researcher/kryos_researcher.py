@@ -54,6 +54,9 @@ DB_PATH = DATA_DIR / "researcher.db"
 NOTIFICATION_BUS_URL = os.environ.get(
     "NOTIFICATION_BUS_URL", "http://notification-bus:8111"
 )
+PROPOSAL_GATE_URL = os.environ.get(
+    "PROPOSAL_GATE_URL", "http://proposal-gate:8121"
+)
 MEMORY_SERVICE_URL = os.environ.get(
     "MEMORY_SERVICE_URL", "http://memory-service:8108"
 )
@@ -784,6 +787,31 @@ async def _emit_notification(proposal: ProposalResponse) -> str | None:
         return None
 
 
+async def _register_with_gate(proposal: ProposalResponse) -> str | None:
+    """Register the synthesised proposal with the Proposal Gate so the
+    user can approve or reject it. Returns the gate's proposal id, or
+    None if the gate is unreachable (in which case the notification
+    alone serves as a heads-up and the user can re-run synthesis later).
+    """
+    payload = {
+        "title": proposal.title,
+        "rationale": proposal.rationale,
+        "plan": proposal.plan,
+        "sources": proposal.sources,
+        "origin": "kryos-researcher",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"{PROPOSAL_GATE_URL}/proposal", json=payload
+            )
+            resp.raise_for_status()
+            return resp.json().get("id")
+    except httpx.HTTPError as exc:
+        logger.info("proposal-gate unreachable: %s", exc)
+        return None
+
+
 async def _run_proposal_cycle() -> ProposalResponse | None:
     """Budget-check, fetch recent notes, ask Lumyn for a proposal,
     persist it and emit a notification."""
@@ -835,12 +863,15 @@ async def _run_proposal_cycle() -> ProposalResponse | None:
         sources=[str(s) for s in sources][:20],
         created_at=_now_iso(),
     )
+    gate_id = await _register_with_gate(proposal)
+    if gate_id:
+        proposal.id = gate_id
     notif_id = await _emit_notification(proposal)
     await _save_proposal(proposal, notif_id)
     await _record_cycle(
         "proposal",
         ok=True,
-        detail=f"new proposal id={proposal.id} notif={notif_id}",
+        detail=f"new proposal id={proposal.id} notif={notif_id} gate={gate_id}",
     )
     logger.info(
         "proposal emitted: title=%r notif=%s", proposal.title, notif_id

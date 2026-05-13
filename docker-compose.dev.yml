@@ -633,6 +633,22 @@ services:
       - model-gateway
     restart: unless-stopped
 
+  proposal-gate:
+    build:
+      context: ./platform/proposal-gate
+    ports:
+      - "8121:8121"
+    environment:
+      DATA_DIR: /data
+      NOTIFICATION_BUS_URL: http://notification-bus:8111
+      AGENT_RUNTIME_URL: http://agent-runtime:8100
+      PROPOSAL_TTL_HOURS: "${PROPOSAL_TTL_HOURS:-168}"
+    volumes:
+      - proposal-gate-data:/data
+    depends_on:
+      - notification-bus
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   chromadb_data:
@@ -659,4 +675,5 @@ volumes:
   sdk-registry-data:
   sdk-apps-workspace:
   kryos-researcher-data:
+  proposal-gate-data:
 
