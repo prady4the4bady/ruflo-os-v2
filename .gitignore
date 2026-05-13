@@ -98,3 +98,7 @@ test_results_agentnet.txt
 test_soul.txt
 tmp-exec-output.txt
 watch_*.txt
+
+# JWT test keys
+*.pem
+tests/.tmp/
