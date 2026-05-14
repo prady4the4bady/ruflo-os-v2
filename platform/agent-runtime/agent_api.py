@@ -1457,6 +1457,57 @@ async def memory_search(request: Request) -> Response:
     return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
 
+@app.post("/api/neila/enqueue")
+async def neila_enqueue(request: Request) -> Response:
+    body = await request.json()
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.post(f"{NEILA_URL}/neila/enqueue", json=body)
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.get("/api/neila/queue")
+async def neila_queue() -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.get(f"{NEILA_URL}/neila/queue")
+    return Response(content=r.content, media_type="application/json")
+
+
+@app.post("/api/neila/schedule")
+async def neila_schedule(request: Request) -> Response:
+    body = await request.json()
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.post(f"{NEILA_URL}/neila/schedule", json=body)
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.get("/api/neila/metrics")
+async def neila_metrics() -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.get(f"{NEILA_URL}/neila/metrics")
+    return Response(content=r.content, media_type="application/json")
+
+
+@app.get("/api/neila/scheduled")
+async def neila_scheduled() -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.get(f"{NEILA_URL}/neila/scheduled")
+    return Response(content=r.content, media_type="application/json")
+
+
+@app.delete("/api/memory/{entry_id}")
+async def memory_delete(entry_id: str) -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.delete(f"{AHNIS_URL}/memory/{entry_id}")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.post("/api/memory/consolidate")
+async def memory_consolidate() -> Response:
+    async with httpx.AsyncClient(timeout=30.0) as c:
+        r = await c.post(f"{AHNIS_URL}/memory/consolidate")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "agents": len(_manager.list_agents())}
