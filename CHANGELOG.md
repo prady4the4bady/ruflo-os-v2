@@ -2,15 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
-## v1.0.0 — Phase 42 — 2026-05-14 "Final Verification"
+## v1.0.0 — Phase 42 — 2026-05-14 "Verified"
 
 ### Added
-- platform/tests/test_feature_claims.py: Verifies every public claim about Prady OS is backed by a passing test. The honesty contract in code form.
-- HONEST_LIMITATIONS.md: Documents what does not work, what is a stub, what requires specific hardware. Nothing hidden.
-- README.md: Final production version with verified feature table, install instructions, complete service map (44 services).
+- platform/tests/test_feature_claims.py: The honesty contract. Every public claim about Prady OS verified by a passing test. 43 tests across 8 claim categories + honesty principle. If a test fails, the feature must be fixed or the claim removed from all documentation.
+- HONEST_LIMITATIONS.md: Documents what does not work, what is a stub, what requires specific hardware or credentials. Covers: BIOS AI hardware requirement, computer-use display dependency, voice audio requirement, LoRA GPU requirement, GGML UEFI stub status, social API credential requirements, GitHub token requirement, build time estimates, market intelligence accuracy limits, self-learning improvement rate notes. Nothing hidden from users.
 
-### Changed
-- README.md fully rewritten to production quality. Every claim maps to a test file or service.
+### Updated
+- README.md: Final production version. Every claim maps to a test file or service. Includes "What Prax does NOT claim" section. Links to HONEST_LIMITATIONS.md prominently.
+- CHANGELOG.md: This entry.
 
 ## v1.0.0 — Phase 41 — 2026-05-14 "Self-Organization"
 
