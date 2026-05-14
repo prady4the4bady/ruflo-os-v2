@@ -61,7 +61,6 @@ jobs:
         run: |
           echo "=== Disk space before cleanup ==="
           df -h
-          # Remove large pre-installed packages not needed for the build
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
@@ -79,11 +78,13 @@ jobs:
 
       - name: Create swap file (prevents OOM during GCC compilation)
         run: |
-          echo "=== RAM before swap ==="
+          echo "=== Memory before swap ==="
           free -h
-          # Allocate a 6 GB swap file to give GCC headroom for large compilations
-          # (bash, openssh, python3 can each use 1-2 GB RSS with -O2/-Os)
-          sudo fallocate -l 6G /swapfile
+          # Disable and remove any existing swapfile first (runner may recycle)
+          sudo swapoff /swapfile 2>/dev/null || true
+          sudo rm -f /swapfile
+          # Use dd instead of fallocate to avoid 'Text file busy' on recycled runners
+          sudo dd if=/dev/zero of=/swapfile bs=1M count=6144 status=none
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
