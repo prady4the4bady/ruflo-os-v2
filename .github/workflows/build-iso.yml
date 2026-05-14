@@ -10,14 +10,11 @@ on:
     branches: [main]
     tags: ['v*']
   workflow_dispatch:
-
 permissions:
   contents: read
-
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONDONTWRITEBYTECODE: "1"
-
 jobs:
   validate:
     name: Validate ISO build configuration
@@ -27,24 +24,18 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: false
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-
       - name: Install Python test dependencies
         run: python -m pip install --upgrade pip pytest pyyaml Pillow
-
       - name: Run ISO build config tests
         run: python -m pytest build/iso/tests/ -W error::DeprecationWarning -q
-
       - name: Validate production compose
         run: docker compose -f build/iso/docker-compose.prod.yml config --quiet
-
       - name: Validate development compose
         run: docker compose -f docker-compose.dev.yml config --quiet
-
       - name: Shell script syntax check
         run: |
           bash -n build/iso/scripts/build_iso.sh
@@ -65,6 +56,23 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: recursive
+
+      - name: Maximize build space
+        run: |
+          echo "=== Disk space before cleanup ==="
+          df -h
+          # Remove large pre-installed packages not needed for the build
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/local/.ghcup
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          echo "=== Disk space after cleanup ==="
+          df -h
 
       - name: Install Buildroot dependencies
         run: |
@@ -99,7 +107,7 @@ jobs:
             echo "## Prady OS ISO Build"
             echo "| Field | Value |"
             echo "|-------|-------|"
-            echo "| ISO   | prady-os.iso |"
+            echo "| ISO | prady-os.iso |"
             echo "| SHA256 | \`${SHA256}\` |"
             if [ -f output/prady-os.iso.sig ]; then
               echo "| Signature | prady-os.iso.sig |"
