@@ -890,7 +890,7 @@ volumes:
   sdk-registry-data:
   sdk-apps-workspace:
   kryos-researcher-data:
-    ahnis-data:
-  neila-data:
+        ahnis-data:
+    neila-data:
   proposal-gate-data:
 
