@@ -2,6 +2,27 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.0.0 — Phase 42 — 2026-05-14 "Final Verification"
+
+### Added
+- platform/tests/test_feature_claims.py: Verifies every public claim about Prady OS is backed by a passing test. The honesty contract in code form.
+- HONEST_LIMITATIONS.md: Documents what does not work, what is a stub, what requires specific hardware. Nothing hidden.
+- README.md: Final production version with verified feature table, install instructions, complete service map (44 services).
+
+### Changed
+- README.md fully rewritten to production quality. Every claim maps to a test file or service.
+
+## v1.0.0 — Phase 41 — 2026-05-14 "Self-Organization"
+
+### Added
+- Idle-time research trigger: Prax monitors CPU and RAM every 5 minutes. When idle 30+ minutes, starts inventor research.
+- Weekly digest: Every Monday 9AM Prax sends honest stats to notification-bus. Failures never hidden.
+- GET /inventor/digest: Returns weekly stats and honest summary via API.
+- Weekly Digest UI card: 6 metric tiles in InventorDashboard showing real weekly numbers.
+
+### Fixed
+- Compose parity: kryos-researcher and proposal-gate were missing from prod compose. Now 44/44 match.
+
 ## v1.0.0 — Phase 39 — 2026-05-13 "Prax Invents"
 
 ### Added: Prax Inventor Engine

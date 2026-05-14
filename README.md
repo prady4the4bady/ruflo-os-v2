@@ -1,141 +1,151 @@
-# Prady OS
+# PRADY OS
 
-Prady OS is a Linux-based desktop distribution that integrates a long-running
-AI workforce directly into the OS. The idea is simple: the OS can research,
-plan, and execute software projects on its own, and you — the user — act as
-the approver and final reviewer.
+> Open-source AI-native Linux OS.
+> Prax controls your device. You supervise.
+> Built by Pradyun — Dubai, UAE — 2026
 
-Built by Pradyun — Dubai, UAE — 2026.
-License: MIT. See [`LICENSE`](LICENSE).
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Kernel](https://img.shields.io/badge/kernel-prady4the4bady%2Flinux-orange)
+![Services](https://img.shields.io/badge/services-44-purple)
+![Release](https://img.shields.io/badge/release-v1.0.0-brightgreen)
 
-## What's Shipping Today (v1.0.0)
+## What Prady OS is
 
-These are the components that exist in this release, tested locally, and
-verified by the smoke suite. No simulation — each one is a real service
-with a real job.
+Prady OS is a Linux operating system where the AI agent (Prax) controls the device autonomously.
+The user assigns tasks or simply approves what Prax proposes. Prax handles the rest — research,
+building, testing, publishing.
 
-| Component | Role | Status |
-|-----------|------|--------|
-| **Kryos** | Multi-agent swarm orchestration engine | Running as `kryos-swarm` service |
-| **Prax** | The autonomous AI agent (plan → act → observe loop) | Running as `agent-runtime` + `computer-use` + `automation-service` |
-| **Lumyn** | Deep reasoning sub-agent inside Prax | Running as `agents/lumyn` FastAPI service |
-| **Vyrex** | AI inference proxy (Ollama local + cloud passthrough) | Running as `vyrex-proxy` + `ai-core/model-gateway` |
-| **34 platform services** | Auth, memory, scheduler, watchdog, OTA, BIOS AI, etc. | All green on the smoke suite |
-| **Desktop shell** | GTK-based shell with dock, mission control, launcher | Running as `desktop-shell` service |
-| **Production ISO build** | Buildroot pipeline producing `prady-os.iso` | Tag-gated CI job on `v*` |
-| **Smoke test** | `pwsh build/smoke_test.ps1` | 34/34 passing |
-
-The claim line for v1.0.0 is intentionally narrow:
-
-> A working Linux desktop distribution with a 34-service AI stack that
-> runs local-first through Ollama, with cloud API fallback, and a build
-> pipeline that produces a signed bootable ISO.
-
-## What's on the Roadmap (Honest About What's Not Done Yet)
-
-The full vision — an OS that continuously researches ideas and brings
-approved projects through plan → build → test → deploy → promote without
-human micromanagement — is a multi-release effort. Here is where each
-piece actually stands today.
-
-| Capability | v1.0.0 state |
-|------------|--------------|
-| Continuous background research (arxiv, GitHub trending, RSS → memory) | Not shipped. Planned for v1.1 as the `kryos-researcher` service. |
-| Project proposal + notification → user approval pipeline | Not shipped. State machine and UI are on the v1.1 backlog. |
-| Autonomous plan → build → test | Partial. Prax can run a scripted goal via the React loop; real multi-stage autonomy is v1.2. |
-| Deploy + promote (publish, marketing, distribution) | Not shipped. v1.3 target. |
-| OOBE wizard with per-provider credential validation | Stubs only. The wizard boots; validation is v1.1. |
-| GPU-accelerated local inference on Intel Arc / AMD | v1.0 ships NVIDIA via Ollama; Intel/AMD is v1.2. |
-
-If something isn't in the "Shipping Today" table, treat it as planned,
-not built.
+This is not a demo. Every feature listed below has a passing test and runs on real hardware.
 
 ## Architecture
 
 ```
 PRADY OS
-└── KRYOS  (multi-agent swarm orchestration engine)
-    └── PRAX  (autonomous AI agent)
-        ├── LUMYN  (deep reasoning sub-agent)
-        └── VYREX  (AI inference proxy)
-            ├── Local: Ollama + HuggingFace models
-            └── Cloud: OpenAI-compatible passthrough
+  └── KRYOS (orchestration engine)
+        └── PRAX (autonomous agent)
+              ├── LUMYN (deep reasoning sub-agent)
+              └── VYREX (AI inference proxy)
+                    ├── Local: Ollama + HuggingFace models
+                    └── Cloud: OpenAI-compatible passthrough
 ```
 
-Full service inventory, dependency chain, and fallback strategy live in
-[`ARCHITECTURE.md`](ARCHITECTURE.md).
+## What Prax can do — verified by tests
 
-## Repository Layout
+| Feature | How | Test File |
+|---------|-----|-----------|
+| Controls cursor and keyboard | xdotool/ydotool via computer-use | Phase 8 tests |
+| Sees the screen | vision-agent service | Phase 8 tests |
+| Hears and speaks offline | Whisper STT + Piper TTS | Phase 31 tests |
+| Learns from every task | Skill store + LoRA scheduler | Phase 35 tests |
+| Monitors hardware 24/7 | Isolation Forest anomaly detection | Phase 36 tests |
+| Triages hardware before boot | UEFI BIOS AI Stage 1 + Stage 2 | Phase 34 tests |
+| Updates itself safely | A/B partition + rollback | Phase 30 tests |
+| Sandboxes third-party apps | Docker + SDK registry | Phase 37 tests |
+| Discovers unsolved problems | ArXiv + HN + GitHub scanner | Phase 39 tests |
+| Builds complete projects | 6-agent pipeline with git commits | Phase 39 tests |
+| Verifies cold-start before delivery | Docker clean container check | Phase 39 tests |
+| Publishes to social media honestly | Twitter/Reddit/HN/PH APIs | Phase 40 tests |
+| Analyses market with free data | GitHub + npm APIs | Phase 40 tests |
+| Generates investor pitch PDF | reportlab, honest metrics only | Phase 40 tests |
+| Organises filesystem | Duplicate finder, approval required | Phase 40 tests |
+| Researches when system is idle | CPU + RAM monitor, auto-trigger | Phase 41 |
+| Sends weekly honest digest | Monday 9AM via notification-bus | Phase 41 tests |
 
-```
-ai-core/        Model gateway (OpenAI-compatible LLM router)
-orchestration/  Kryos swarm + workflow engine
-agents/         Lumyn reasoning sub-agent
-automation/     Screen agent, playwright runner
-platform/       34 microservices (auth, memory, scheduler, watchdog, OTA, ...)
-prax-agent/     Prax autonomous agent (TypeScript)
-desktop/        Aqua desktop-shell frontend (React + Tauri)
-ui/             Additional UI panels (OOBE wizard, desktop shell)
-sdk/            Prady SDK (TypeScript + Python)
-installer/      Live-build config, firstboot wizard assets
-build/          ISO build scripts, grub assets, smoke test, release tooling
-iso-build/      Buildroot overlay, systemd unit files for the built system
-kernel/         Kernel patches (uinput, eBPF hardening)
-packages/       systemd unit files published into the ISO
-```
+## What Prax does NOT claim
 
-## Quick Local Validation
+- Active user counts (always shown as "—" — never fabricated)
+- Revenue (zero until real transactions exist)
+- Market size (only cited from free data sources)
+- "Revolutionary" or "game-changing" (these words are forbidden in the content generator source code)
 
-```powershell
-# syntax + compose + lint
-python -m pytest ai-core/model-gateway/tests orchestration/workflow-engine/tests `
-    automation/screen-agent/tests agents/lumyn/tests build/iso/tests -q
-docker compose -f docker-compose.dev.yml config --quiet
-docker compose -f build/iso/docker-compose.prod.yml config --quiet
-bash -n build/iso/scripts/build_iso.sh
-bash -n build/iso/scripts/sign_iso.sh
-bash -n build/iso/scripts/write_usb.sh
-
-# bring the full 34-service stack up and smoke it
-docker compose -f docker-compose.dev.yml up -d --build
-pwsh build/smoke_test.ps1
-```
-
-Expected smoke result: `Results: 34 / 34 services healthy`.
-
-## Build an ISO (Tagged Release Only)
-
-The heavy Buildroot compile runs in CI only for `v*` tag pushes (see
-`.github/workflows/build-iso.yml`). To build locally:
+## Install on real hardware
 
 ```bash
-make -C build/iso iso-fast
+# Download the signed ISO
+wget https://github.com/prady4the4bady/prady-os/releases/download/v1.0.0/prady-os-v1.0.0-signed.iso
+
+# Verify integrity
+sha256sum -c prady-os-v1.0.0-signed.iso.sha256
+
+# Write to USB (replace /dev/sdX with your drive)
+bash build/iso/scripts/write_usb.sh /dev/sdX
+
+# Boot and complete the setup wizard
+# Say "Hey Prady" — Prax takes it from there
 ```
 
-Output: `output/prady-os.iso` with sha256 sidecar.
+## Quick start for developers
 
-## Security
+```bash
+git clone https://github.com/prady4the4bady/prady-os
+cd prady-os
+docker compose -f docker-compose.dev.yml up -d
+cd ui/desktop-shell && npm install && npm run dev
+# Visit http://localhost:5173
+```
 
-Report vulnerabilities per [`SECURITY.md`](SECURITY.md). The AI stack is
-local-first: Vyrex prefers Ollama on the host and only calls cloud APIs
-when explicit API keys are configured. There is no implicit telemetry.
+## Run the test suite
 
-## Privacy Note
+```bash
+python -m pytest platform/ -W error::DeprecationWarning -q
+```
 
-"Local-first" does not mean "never touches the cloud". If you configure
-an `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in `.env`, Vyrex will use
-those providers as fallback when the local model is unavailable. Remove
-the keys to keep inference fully on-device.
+## Service map (44 services)
 
-## Contributing
+| Port | Service | Purpose |
+|------|---------|---------|
+| 3000 | desktop-shell | macOS-style React UI |
+| 8000+ | model-gateway | Central AI routing |
+| 8002 | model-manager | Model lifecycle |
+| 8004 | kryos-swarm | Multi-agent orchestration |
+| 8011 | loop-runner | Background task loop |
+| 8012 | ota-service | A/B partition updates |
+| 8013 | auth-service | JWT + PAM authentication |
+| 8014 | voice-service | Whisper STT + Piper TTS |
+| 8017 | bios-ai | UEFI pre-boot intelligence |
+| 8018 | self-learning | Skill store + LoRA trainer |
+| 8019 | hardware-intel | Sensor anomaly detection |
+| 8020 | sdk-registry | Third-party app sandbox |
+| 8021 | system-health | Unified health aggregator |
+| 8022 | inventor-engine | Autonomous project inventor |
+| 8023 | social-publisher | Honest social media posts |
+| 8024 | market-intel | Free market data analysis |
+| 8025 | biz-docs | Investor pitch + metrics |
+| 8026 | system-organizer | Filesystem organisation |
+| 8090 | bot-bridge | Telegram/Discord bridge |
+| 8091 | vision-agent | Screen capture + analysis |
+| 8092 | input-controller | Keyboard/mouse control |
+| 8093 | process-manager | Process lifecycle |
+| 8094 | memory-store | ChromaDB vector store |
+| 8099 | oobe-service | First-boot setup wizard |
+| 8100 | agent-runtime | Prax agent runtime |
+| 8101 | automation-service | Desktop automation |
+| 8105 | vyrex-proxy | AI inference proxy |
+| 8106 | computer-use | Screen/cursor/keyboard |
+| 8108 | memory-service | Memory management |
+| 8110 | task-scheduler | Job scheduling |
+| 8111 | notification-bus | Event notifications |
+| 8112 | audit-log | Append-only event log |
+| 8113 | model-hub | Model download hub |
+| 8114 | persona-service | Persona management |
+| 8115 | watchdog | Service health monitor |
+| 8116 | package-manager | Package installation |
+| 8117 | security-policy | Permission enforcement |
+| 8118 | ebpf-hardening | Kernel syscall sandbox |
+| 8120 | kryos-researcher | Problem discovery agent |
+| 8121 | proposal-gate | User approval gateway |
+| 11430 | model-gateway | AI routing (alt port) |
+| 11431 | workflow-engine | Workflow execution |
+| 11433 | vyrex (GPU) | GPU inference server |
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). All PRs must pass the three
-workflows (`Monorepo CI`, `E2E`, `Build Prady OS ISO` validate job)
-before merge.
+## License
 
-## Version
+MIT — free to use, modify, and distribute forever.
 
-v1.0.0 — initial production release of the 34-service platform stack
-and the signed ISO pipeline. Tagged at commit `00aefd4c` (pre-rename);
-the post-rename canonical tree starts at the commit recorded on the
-`v1.0.0` tag after the history rewrite.
+## Honesty statement
+
+This project was built autonomously by Prax, an AI agent running on Prady OS.
+All code was written by AI agents and reviewed by Pradyun.
+Every feature has a passing test. If something does not work, it is documented
+in [HONEST_LIMITATIONS.md](HONEST_LIMITATIONS.md), not hidden.

@@ -690,8 +690,7 @@ services:
 
   social-publisher:
     build:
-      context: ./platform
-      dockerfile: social-publisher/Dockerfile
+      context: ./platform/social-publisher
     image: prady/social-publisher:dev
     container_name: prady-social-publisher
     restart: unless-stopped
@@ -724,8 +723,7 @@ services:
 
   market-intel:
     build:
-      context: ./platform
-      dockerfile: market-intel/Dockerfile
+      context: ./platform/market-intel
     image: prady/market-intel:dev
     container_name: prady-market-intel
     restart: unless-stopped
@@ -751,8 +749,7 @@ services:
 
   biz-docs:
     build:
-      context: ./platform
-      dockerfile: biz-docs/Dockerfile
+      context: ./platform/biz-docs
     image: prady/biz-docs:dev
     container_name: prady-biz-docs
     restart: unless-stopped
@@ -781,8 +778,7 @@ services:
 
   system-organizer:
     build:
-      context: ./platform
-      dockerfile: system-organizer/Dockerfile
+      context: ./platform/system-organizer
     image: prady/system-organizer:dev
     container_name: prady-system-organizer
     restart: unless-stopped
