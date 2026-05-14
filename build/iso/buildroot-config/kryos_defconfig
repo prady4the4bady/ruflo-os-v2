@@ -16,8 +16,17 @@ BR2_X86_CPU_COREI2CORE=y
 
 # Build options
 # BR2_CCACHE removed: no persistent cache on GitHub free runners
-BR2_OPTIMIZE_S=y
+# BR2_OPTIMIZE_0 used instead of BR2_OPTIMIZE_S to avoid GCC OOM on
+# free runners (7 GB RAM, no swap). -Os triggers very high memory
+# usage in GCC when compiling large files (e.g. bash, openssh).
+BR2_OPTIMIZE_0=y
 BR2_JLEVEL=1
+# Suppress all compiler warnings from third-party packages.
+# These warnings (e.g. -Wdiscarded-qualifiers from bash, -Wnonnull
+# from libattr) are noise from upstream sources we do not control.
+BR2_TARGET_CFLAGS="-w"
+BR2_TARGET_CXXFLAGS="-w"
+BR2_HOSTCC_CFLAGS="-w"
 
 # Toolchain: use pre-built Bootlin external toolchain to skip
 # compiling glibc from source (avoids glibc-2.38 SSE2 build failure
