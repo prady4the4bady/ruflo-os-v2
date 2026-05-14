@@ -7,9 +7,3 @@
 [submodule "shell/rofi-base"]
 	path = shell/rofi-base
 	url = https://github.com/lbonn/rofi
-[submodule "agents/ouroboros"]
-	path = agents/ouroboros
-	url = https://github.com/prady4the4bady/ouroboros-desktop.git
-[submodule "ai-core/mempalace"]
-	path = ai-core/mempalace
-	url = https://github.com/prady4the4bady/mempalace-Aya-fork.git
