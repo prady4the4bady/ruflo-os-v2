@@ -32,6 +32,23 @@ interface Project {
   build_completed: string | null;
 }
 
+interface DigestStats {
+  problems_scanned: number;
+  proposals_created: number;
+  projects_verified: number;
+  projects_published: number;
+  projects_failed: number;
+  skills_added: number;
+  storage_mb: number;
+}
+
+interface DigestData {
+  period: string;
+  generated_ts: string;
+  stats: DigestStats;
+  honest_summary: string;
+}
+
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif";
 
 export default function InventorDashboard({ open, onOpenChange, layerZIndex }: Readonly<InventorDashboardProps>): JSX.Element | null {
@@ -39,6 +56,14 @@ export default function InventorDashboard({ open, onOpenChange, layerZIndex }: R
   const [status, setStatus] = useState<InventorStatus | null>(null);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [digest, setDigest] = useState<DigestData | null>(null);
+
+  const fetchDigest = useCallback(async () => {
+    try {
+      const r = await fetch("/api/inventor/digest");
+      if (r.ok) setDigest((await r.json()) as DigestData);
+    } catch { /* ignore */ }
+  }, []);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -66,13 +91,17 @@ export default function InventorDashboard({ open, onOpenChange, layerZIndex }: R
     void fetchStatus();
     void fetchProposals();
     void fetchProjects();
+    void fetchDigest();
     const timer = setInterval(() => {
       void fetchStatus();
       void fetchProposals();
       void fetchProjects();
     }, 5000);
-    return () => clearInterval(timer);
-  }, [open, fetchStatus, fetchProposals, fetchProjects]);
+    const digestTimer = setInterval(() => {
+      void fetchDigest();
+    }, 3600000);
+    return () => { clearInterval(timer); clearInterval(digestTimer); };
+  }, [open, fetchStatus, fetchProposals, fetchProjects, fetchDigest]);
 
   const handleStart = useCallback(async () => {
     await fetch("/api/inventor/start", { method: "POST" });
@@ -178,6 +207,34 @@ export default function InventorDashboard({ open, onOpenChange, layerZIndex }: R
         )}
       </div>
 
+      {digest && (
+        <div
+          style={{
+            margin: "8px 16px 0",
+            border: "1px solid #dbe2ee",
+            borderRadius: 12,
+            background: "#ffffff",
+            padding: 14,
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Prax Weekly Digest</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 8 }}>
+            <DigestMetric label="Problems" value={String(digest.stats.problems_scanned)} />
+            <DigestMetric label="Proposals" value={String(digest.stats.proposals_created)} />
+            <DigestMetric label="Approved" value={String(digest.stats.projects_verified)} />
+            <DigestMetric label="Verified" value={String(digest.stats.projects_verified)} />
+            <DigestMetric label="Published" value={String(digest.stats.projects_published)} />
+            <DigestMetric label="Skills" value={String(digest.stats.skills_added)} />
+          </div>
+          <div style={{ fontSize: 11, color: "#6b7280", fontStyle: "italic", marginBottom: 4 }}>
+            {digest.honest_summary}
+          </div>
+          <div style={{ fontSize: 11, color: "#9ca3af" }}>
+            Failed attempts: {digest.stats.projects_failed}
+          </div>
+        </div>
+      )}
+
       <div style={{ padding: 16, overflowY: "auto", maxHeight: "calc(84vh - 120px)" }}>
         {status?.loop_active === false && tab === "active" && (
           <div style={{ textAlign: "center", padding: 40 }}>
@@ -207,5 +264,14 @@ export default function InventorDashboard({ open, onOpenChange, layerZIndex }: R
         {tab === "history" && <ProjectHistory projects={projects} />}
       </div>
     </dialog>
+  );
+}
+
+function DigestMetric({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div style={{ borderRadius: 8, background: "#f9fafb", border: "1px solid #e5e7eb", padding: "6px 8px", textAlign: "center" }}>
+      <div style={{ fontSize: 10, color: "#6b7280" }}>{label}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>{value}</div>
+    </div>
   );
 }
