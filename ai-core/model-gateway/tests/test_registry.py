@@ -26,11 +26,14 @@ def test_lookup_missing_returns_none(reg: ModelRegistry):
 
 def test_all_returns_all(reg: ModelRegistry):
     models = reg.all()
-    assert len(models) == 3  # matches conftest MODEL_REGISTRY_DATA
+    assert len(models) == 6
     ids = [m.id for m in models]
     assert "llama3.2:3b" in ids
     assert "gpt-4o" in ids
     assert "claude-3-5-sonnet-20241022" in ids
+    assert "nvidia/llama-3.1-nemotron-70b-instruct" in ids
+    assert "gemini-2.0-flash" in ids
+    assert "Qwen/Qwen2.5-7B-Instruct" in ids
 
 
 def test_by_provider_filters(reg: ModelRegistry):
@@ -61,4 +64,4 @@ def test_model_privacy_level(reg: ModelRegistry):
 
 
 def test_len(reg: ModelRegistry):
-    assert len(reg) == 3
+    assert len(reg) == 6

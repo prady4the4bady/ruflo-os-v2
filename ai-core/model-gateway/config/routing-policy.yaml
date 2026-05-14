@@ -20,7 +20,24 @@ providers:
     env_key: ANTHROPIC_API_KEY
     timeout_seconds: 60
 
+  nim:
+    base_url: "https://api.nvcf.nvidia.com/v1"
+    env_key: NVIDIA_NIM_API_KEY
+    timeout_seconds: 60
+
+  gemini:
+    base_url: "https://generativelanguage.googleapis.com/v1beta"
+    env_key: GEMINI_API_KEY
+    timeout_seconds: 60
+
+  vllm:
+    base_url: "http://localhost:8000"
+    env_key: VLLM_API_KEY
+    timeout_seconds: 120
+
 # Order to try cloud providers when falling back from local
 fallback_order:
   - openai
   - anthropic
+  - nim
+  - gemini

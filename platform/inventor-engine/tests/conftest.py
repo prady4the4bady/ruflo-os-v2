@@ -8,6 +8,9 @@ if str(_service_dir) not in sys.path:
     sys.path.insert(0, str(_service_dir))
 
 import pytest
+import pytest_asyncio
+
+from inventor_db import InventorDB
 from research_agent import Problem, Research
 from proposal_engine import ProposalCard
 
@@ -54,4 +57,8 @@ def sample_proposal() -> ProposalCard:
     )
 
 
-
+@pytest_asyncio.fixture
+async def test_db(tmp_path: Path):
+    db = InventorDB(str(tmp_path / "test_inventor.db"))
+    await db.init()
+    yield db

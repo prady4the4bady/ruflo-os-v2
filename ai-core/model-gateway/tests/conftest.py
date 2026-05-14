@@ -40,8 +40,23 @@ ROUTING_POLICY_LOCAL_FIRST = {
             "env_key": "ANTHROPIC_API_KEY",
             "timeout_seconds": 30,
         },
+        "nim": {
+            "base_url": "https://api.nvcf.nvidia.com/v1",
+            "env_key": "NVIDIA_NIM_API_KEY",
+            "timeout_seconds": 30,
+        },
+        "gemini": {
+            "base_url": "https://generativelanguage.googleapis.com/v1beta",
+            "env_key": "GEMINI_API_KEY",
+            "timeout_seconds": 30,
+        },
+        "vllm": {
+            "base_url": "http://localhost:8000",
+            "env_key": "VLLM_API_KEY",
+            "timeout_seconds": 60,
+        },
     },
-    "fallback_order": ["openai", "anthropic"],
+    "fallback_order": ["openai", "anthropic", "nim", "gemini"],
 }
 
 MODEL_REGISTRY_DATA = {
@@ -66,6 +81,27 @@ MODEL_REGISTRY_DATA = {
             "capabilities": ["chat", "completion"],
             "privacy_level": "cloud",
             "latency_profile": "medium",
+        },
+        {
+            "id": "nvidia/llama-3.1-nemotron-70b-instruct",
+            "provider": "nim",
+            "capabilities": ["chat", "completion"],
+            "privacy_level": "cloud",
+            "latency_profile": "medium",
+        },
+        {
+            "id": "gemini-2.0-flash",
+            "provider": "gemini",
+            "capabilities": ["chat", "completion"],
+            "privacy_level": "cloud",
+            "latency_profile": "medium",
+        },
+        {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "provider": "vllm",
+            "capabilities": ["chat", "completion"],
+            "privacy_level": "private",
+            "latency_profile": "fast",
         },
     ]
 }

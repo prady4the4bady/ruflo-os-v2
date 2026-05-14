@@ -482,9 +482,17 @@ async def _run_pull_job(job_id: str, req: PullRequest) -> None:
             "error",
         )
     finally:
-        async with _jobs_lock:
-            _active_pulls.pop(req.model_id, None)
-        _pull_tasks.pop(job_id, None)
+        try:
+            async with _jobs_lock:
+                if _active_pulls is not None:
+                    _active_pulls.pop(req.model_id, None)
+        except Exception:
+            pass
+        try:
+            if _pull_tasks is not None:
+                _pull_tasks.pop(job_id, None)
+        except Exception:
+            pass
 
 
 @asynccontextmanager
@@ -516,7 +524,13 @@ async def pull_model(req: PullRequest) -> dict[str, Any]:
         )
         _active_pulls[req.model_id] = job_id
 
-    pull_task = asyncio.create_task(_run_pull_job(job_id, req))
+    async def _safe_run_pull_job() -> None:
+        try:
+            await _run_pull_job(job_id, req)
+        except Exception as exc:
+            logger.error("Background model pull job %s failed: %s", job_id, exc)
+
+    pull_task = asyncio.create_task(_safe_run_pull_job())
     _pull_tasks[job_id] = pull_task
     return {"job_id": job_id, "status": "queued"}
 

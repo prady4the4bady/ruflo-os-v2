@@ -269,25 +269,20 @@ class TestGate9NamingCompliance:
                 pass
         return matches
 
-    def test_no_vyrex_in_service_files(self) -> None:
-        """No 'vyrex' references in platform services."""
-        matches = self._scan_python_files(REPO_ROOT, ["vyrex"])
-        assert len(matches) == 0, f"Found vyrex references: {matches}"
+    def test_no_nemoclaw_in_service_files(self) -> None:
+        """No 'NemoClaw' legacy references in platform services."""
+        matches = self._scan_python_files(REPO_ROOT, ["NemoClaw", "nemoclaw", "NEMOCLAW", "NEMOCLAW_URL"])
+        assert len(matches) == 0, f"Found legacy NemoClaw references: {matches}"
 
-    def test_no_kryos_os_in_service_files(self) -> None:
-        """No 'kryos-os' references in platform services (renamed to 'Prady OS')."""
-        matches = self._scan_python_files(REPO_ROOT, ["kryos-os"])
-        assert len(matches) == 0, f"Found kryos-os references: {matches}"
+    def test_no_ruflo_os_in_service_files(self) -> None:
+        """No 'Ruflo OS' legacy references in platform services."""
+        matches = self._scan_python_files(REPO_ROOT, ["Ruflo OS", "ruflo-os-v2", "RufloOS", "Ruflo Agent", "ruflo-agent", "RufloAgent", "RUFLO_AGENT"])
+        assert len(matches) == 0, f"Found legacy Ruflo references: {matches}"
 
-    def test_no_lumyn_agent_in_service_files(self) -> None:
-        """No 'lumyn-agent' references in platform services."""
-        matches = self._scan_python_files(REPO_ROOT, ["lumyn-agent"])
-        assert len(matches) == 0, f"Found lumyn-agent references: {matches}"
-
-    def test_no_prax_agent_in_service_files(self) -> None:
-        """No 'prax-agent' references in platform services."""
-        matches = self._scan_python_files(REPO_ROOT, ["prax-agent"])
-        assert len(matches) == 0, f"Found prax-agent references: {matches}"
+    def test_no_hermes_agent_in_service_files(self) -> None:
+        """No 'Hermes Agent' legacy references in platform services."""
+        matches = self._scan_python_files(REPO_ROOT, ["Hermes Agent", "hermes-agent", "HermesAgent"])
+        assert len(matches) == 0, f"Found legacy Hermes references: {matches}"
 
 
 # ══════════════════════════════════════════════════════════════════════════════

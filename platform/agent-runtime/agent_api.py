@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import AsyncIterator, Optional
 
 import httpx
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
@@ -119,6 +119,10 @@ SDK_REGISTRY_URL = os.getenv("SDK_REGISTRY_URL", "http://sdk-registry:8020")
 SYSTEM_HEALTH_URL = os.getenv("SYSTEM_HEALTH_URL", "http://system-health:8021")
 OOBE_SERVICE_URL = os.getenv("OOBE_SERVICE_URL", "http://oobe-service:8099")
 INVENTOR_ENGINE_URL = os.getenv("INVENTOR_ENGINE_URL", "http://inventor-engine:8022")
+SOCIAL_PUBLISHER_URL = os.getenv("SOCIAL_PUBLISHER_URL", "http://social-publisher:8023")
+MARKET_INTEL_URL = os.getenv("MARKET_INTEL_URL", "http://market-intel:8024")
+BIZ_DOCS_URL = os.getenv("BIZ_DOCS_URL", "http://biz-docs:8025")
+SYSTEM_ORGANIZER_URL = os.getenv("SYSTEM_ORGANIZER_URL", "http://system-organizer:8026")
 
 
 async def _notify_self_learning(
@@ -1316,6 +1320,87 @@ async def inventor_projects() -> Response:
 async def inventor_progress(project_id: str) -> Response:
     async with httpx.AsyncClient(timeout=30.0) as c:
         r = await c.get(f"{INVENTOR_ENGINE_URL}/inventor/projects/{project_id}/progress")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+# ---------------------------------------------------------------------------
+# Phase 40 proxy routes
+# ---------------------------------------------------------------------------
+
+@app.post("/api/social/publish/{project_id}")
+async def social_publish(project_id: str) -> Response:
+    async with httpx.AsyncClient(timeout=30.0) as c:
+        r = await c.post(f"{SOCIAL_PUBLISHER_URL}/publish/project/{project_id}")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.get("/api/social/status/{project_id}")
+async def social_status(project_id: str) -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.get(f"{SOCIAL_PUBLISHER_URL}/publish/status/{project_id}")
+    return Response(content=r.content, media_type="application/json")
+
+
+@app.get("/api/social/metrics/{project_id}")
+async def social_metrics(project_id: str) -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.get(f"{SOCIAL_PUBLISHER_URL}/publish/metrics/{project_id}")
+    return Response(content=r.content, media_type="application/json")
+
+
+@app.post("/api/market/analyse/{project_id}")
+async def market_analyse(project_id: str) -> Response:
+    async with httpx.AsyncClient(timeout=60.0) as c:
+        r = await c.post(f"{MARKET_INTEL_URL}/market/analyse/{project_id}")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.get("/api/market/report/{project_id}")
+async def market_report(project_id: str) -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.get(f"{MARKET_INTEL_URL}/market/report/{project_id}")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.post("/api/docs/generate/{project_id}")
+async def docs_generate(project_id: str) -> Response:
+    async with httpx.AsyncClient(timeout=60.0) as c:
+        r = await c.post(f"{BIZ_DOCS_URL}/docs/generate/{project_id}")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.get("/api/docs/{project_id}/pitch")
+async def docs_pitch(project_id: str) -> Response:
+    async with httpx.AsyncClient(timeout=30.0) as c:
+        r = await c.get(f"{BIZ_DOCS_URL}/docs/{project_id}/pitch")
+    return Response(content=r.content, media_type="text/markdown", status_code=r.status_code)
+
+
+@app.get("/api/docs/{project_id}/metrics")
+async def docs_metrics(project_id: str) -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.get(f"{BIZ_DOCS_URL}/docs/{project_id}/metrics")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.post("/api/organizer/scan")
+async def organizer_scan() -> Response:
+    async with httpx.AsyncClient(timeout=60.0) as c:
+        r = await c.post(f"{SYSTEM_ORGANIZER_URL}/organizer/scan")
+    return Response(content=r.content, media_type="application/json")
+
+
+@app.get("/api/organizer/status")
+async def organizer_status() -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.get(f"{SYSTEM_ORGANIZER_URL}/organizer/status")
+    return Response(content=r.content, media_type="application/json")
+
+
+@app.post("/api/organizer/apply/{suggestion_id}")
+async def organizer_apply(suggestion_id: str) -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.post(f"{SYSTEM_ORGANIZER_URL}/organizer/apply/{suggestion_id}")
     return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
 

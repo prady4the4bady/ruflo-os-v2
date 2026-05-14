@@ -68,7 +68,7 @@ def test_cloud_only_excludes_ollama(policy_cloud_only):
 def test_cloud_only_includes_fallback_order(policy_cloud_only):
     engine = RoutingPolicyEngine(policy_cloud_only)
     decision = engine.decide("gpt-4o")
-    assert decision.backends == ["openai", "anthropic"]
+    assert decision.backends == ["openai", "anthropic", "nim", "gemini"]
 
 
 # ---------------------------------------------------------------------------

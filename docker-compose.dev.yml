@@ -688,7 +688,130 @@ services:
       retries: 3
       start_period: 20s
 
+  social-publisher:
+    build:
+      context: ./platform
+      dockerfile: social-publisher/Dockerfile
+    image: prady/social-publisher:dev
+    container_name: prady-social-publisher
+    restart: unless-stopped
+    ports:
+      - "8023:8023"
+    environment:
+      - PORT=8023
+      - TWITTER_BEARER_TOKEN=${TWITTER_BEARER_TOKEN:-}
+      - TWITTER_API_KEY=${TWITTER_API_KEY:-}
+      - TWITTER_API_SECRET=${TWITTER_API_SECRET:-}
+      - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID:-}
+      - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET:-}
+      - PRODUCTHUNT_API_KEY=${PRODUCTHUNT_API_KEY:-}
+      - INVENTOR_ENGINE_URL=http://inventor-engine:8022
+      - AUDIT_LOG_URL=http://audit-log:8112
+      - VYREX_URL=http://vyrex-proxy:8105
+      - LOG_LEVEL=INFO
+    volumes:
+      - social-data:/data/social
+    depends_on:
+      - inventor-engine
+      - audit-log
+      - vyrex-proxy
+    healthcheck:
+      test: ["CMD","python","-c","import httpx,sys; r=httpx.get('http://localhost:8023/health',timeout=5); sys.exit(0 if r.json().get('status')=='ok' else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  market-intel:
+    build:
+      context: ./platform
+      dockerfile: market-intel/Dockerfile
+    image: prady/market-intel:dev
+    container_name: prady-market-intel
+    restart: unless-stopped
+    ports:
+      - "8024:8024"
+    environment:
+      - PORT=8024
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - INVENTOR_ENGINE_URL=http://inventor-engine:8022
+      - AUDIT_LOG_URL=http://audit-log:8112
+      - LOG_LEVEL=INFO
+    volumes:
+      - market-data:/data/market
+    depends_on:
+      - inventor-engine
+      - audit-log
+    healthcheck:
+      test: ["CMD","python","-c","import httpx,sys; r=httpx.get('http://localhost:8024/health',timeout=5); sys.exit(0 if r.json().get('status')=='ok' else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  biz-docs:
+    build:
+      context: ./platform
+      dockerfile: biz-docs/Dockerfile
+    image: prady/biz-docs:dev
+    container_name: prady-biz-docs
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+    environment:
+      - PORT=8025
+      - INVENTOR_ENGINE_URL=http://inventor-engine:8022
+      - MARKET_INTEL_URL=http://market-intel:8024
+      - AUDIT_LOG_URL=http://audit-log:8112
+      - VYREX_URL=http://vyrex-proxy:8105
+      - LOG_LEVEL=INFO
+    volumes:
+      - biz-docs-data:/data/biz-docs
+    depends_on:
+      - inventor-engine
+      - market-intel
+      - audit-log
+      - vyrex-proxy
+    healthcheck:
+      test: ["CMD","python","-c","import httpx,sys; r=httpx.get('http://localhost:8025/health',timeout=5); sys.exit(0 if r.json().get('status')=='ok' else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  system-organizer:
+    build:
+      context: ./platform
+      dockerfile: system-organizer/Dockerfile
+    image: prady/system-organizer:dev
+    container_name: prady-system-organizer
+    restart: unless-stopped
+    ports:
+      - "8026:8026"
+    environment:
+      - PORT=8026
+      - SCAN_ROOT=/var/prady/projects
+      - AUDIT_LOG_URL=http://audit-log:8112
+      - NOTIFICATION_BUS_URL=http://notification-bus:8111
+      - LOG_LEVEL=INFO
+    volumes:
+      - prax-projects:/var/prady/projects
+      - organizer-data:/data/organizer
+    depends_on:
+      - audit-log
+      - notification-bus
+    healthcheck:
+      test: ["CMD","python","-c","import httpx,sys; r=httpx.get('http://localhost:8026/health',timeout=5); sys.exit(0 if r.json().get('status')=='ok' else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
 volumes:
+  social-data:
+  market-data:
+  biz-docs-data:
+  organizer-data:
   inventor-data:
   prax-projects:
   postgres_data:

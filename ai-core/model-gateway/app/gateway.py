@@ -250,6 +250,12 @@ class ModelGateway:
             return await self._anthropic_chat(provider_cfg, request, correlation_id)
         if backend == "vyrex":
             return await self._vyrex_chat(provider_cfg, request, correlation_id)
+        if backend == "nim":
+            return await self._nim_chat(provider_cfg, request, correlation_id)
+        if backend == "gemini":
+            return await self._gemini_chat(provider_cfg, request, correlation_id)
+        if backend == "vllm":
+            return await self._vllm_chat(provider_cfg, request, correlation_id)
         raise GatewayError(f"Unknown backend: '{backend}'", status_code=500)
 
     # ------------------------------------------------------------------
@@ -389,6 +395,126 @@ class ModelGateway:
 
         return ChatCompletionResponse.model_validate(resp.json())
 
+    async def _openai_compatible_chat(
+        self,
+        cfg: ProviderConfig,
+        request: ChatCompletionRequest,
+        correlation_id: str,
+        backend_label: str,
+        api_key_required: bool = True,
+    ) -> ChatCompletionResponse:
+        """Shared handler for OpenAI-compatible backends (NIM, vLLM, etc.).
+
+        Args:
+            cfg: Provider configuration.
+            api_key_required: If True, raises error when no API key is set.
+                              Set False for backends that may be unauthenticated (e.g. local vLLM).
+        """
+        api_key = cfg.api_key
+        if not api_key and api_key_required:
+            raise GatewayError(
+                f"{backend_label} API key not configured ({cfg.env_key or 'unknown'})",
+                status_code=503,
+            )
+
+        url = f"{cfg.base_url}/chat/completions"
+        payload = request.model_dump(exclude_none=True)
+        headers = {
+            "Content-Type": _CONTENT_TYPE_JSON,
+            "X-Correlation-ID": correlation_id,
+        }
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+
+        async with httpx.AsyncClient(timeout=cfg.timeout) as client:
+            resp = await client.post(url, json=payload, headers=headers)
+            resp.raise_for_status()
+        return ChatCompletionResponse.model_validate(resp.json())
+
+    async def _nim_chat(
+        self,
+        cfg: ProviderConfig,
+        request: ChatCompletionRequest,
+        correlation_id: str,
+    ) -> ChatCompletionResponse:
+        return await self._openai_compatible_chat(cfg, request, correlation_id, "NVIDIA NIM")
+
+    async def _vllm_chat(
+        self,
+        cfg: ProviderConfig,
+        request: ChatCompletionRequest,
+        correlation_id: str,
+    ) -> ChatCompletionResponse:
+        return await self._openai_compatible_chat(cfg, request, correlation_id, "vLLM", api_key_required=False)
+
+    async def _gemini_chat(
+        self,
+        cfg: ProviderConfig,
+        request: ChatCompletionRequest,
+        correlation_id: str,
+    ) -> ChatCompletionResponse:
+        api_key = cfg.api_key
+        if not api_key:
+            raise GatewayError(
+                "Gemini API key not configured (GEMINI_API_KEY)", status_code=503
+            )
+
+        # Convert OpenAI messages → Gemini format
+        contents: list[Dict[str, Any]] = []
+        system_instruction: Optional[str] = None
+        for msg in request.messages:
+            if msg.role == "system":
+                system_instruction = msg.content
+            else:
+                role = "model" if msg.role == "assistant" else "user"
+                contents.append({"role": role, "parts": [{"text": msg.content or ""}]})
+
+        payload: Dict[str, Any] = {
+            "contents": contents,
+            "generationConfig": {
+                "temperature": request.temperature or 0.7,
+                "maxOutputTokens": request.max_tokens or 8192,
+                "stopSequences": [request.stop] if isinstance(request.stop, str) else (request.stop or []),
+            },
+        }
+        if system_instruction:
+            payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
+
+        url = f"{cfg.base_url}/models/{request.model}:generateContent"
+        async with httpx.AsyncClient(timeout=cfg.timeout) as client:
+            resp = await client.post(
+                url,
+                json=payload,
+                params={"key": api_key},
+                headers={"Content-Type": _CONTENT_TYPE_JSON, "X-Correlation-ID": correlation_id},
+            )
+            resp.raise_for_status()
+
+        data = resp.json()
+        candidate = (data.get("candidates") or [{}])[0]
+        content_parts = (candidate.get("content") or {}).get("parts") or [{}]
+        text = content_parts[0].get("text", "")
+        usage_data = data.get("usageMetadata") or {}
+        prompt_tokens = usage_data.get("promptTokenCount", 0)
+        completion_tokens = usage_data.get("candidatesTokenCount", 0)
+
+        return ChatCompletionResponse(
+            id=f"chatcmpl-{uuid.uuid4().hex[:12]}",
+            model=request.model,
+            choices=[
+                ChatCompletionChoice(
+                    index=0,
+                    message=ChatMessage(role="assistant", content=text),
+                    finish_reason=_gemini_finish_reason(candidate.get("finishReason")),
+                )
+            ],
+            usage=UsageInfo(
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=prompt_tokens + completion_tokens,
+            ),
+        )
+
     async def pull_model(self, source: str, checksum: Optional[str] = None) -> Dict[str, Any]:
         if not self._vyrex:
             return {
@@ -412,4 +538,15 @@ class ModelGateway:
 
 def _anthropic_stop_reason(reason: Optional[str]) -> str:
     mapping = {"end_turn": "stop", "max_tokens": "length", "stop_sequence": "stop"}
+    return mapping.get(reason or "", "stop")
+
+
+def _gemini_finish_reason(reason: Optional[str]) -> str:
+    mapping = {
+        "STOP": "stop",
+        "MAX_TOKENS": "length",
+        "SAFETY": "content_filter",
+        "RECITATION": "content_filter",
+        "OTHER": "stop",
+    }
     return mapping.get(reason or "", "stop")

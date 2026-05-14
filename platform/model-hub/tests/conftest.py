@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
 from typing import Any
 
 import pytest
+
+_service_dir = Path(__file__).resolve().parent.parent
+if str(_service_dir) not in sys.path:
+    sys.path.insert(0, str(_service_dir))
 
 import model_hub_service as mh
 
