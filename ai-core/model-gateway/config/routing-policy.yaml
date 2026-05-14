@@ -34,6 +34,18 @@ providers:
     base_url: "http://localhost:8000"
     env_key: VLLM_API_KEY
     timeout_seconds: 120
+    
+  # Neila — internal desktop agent runtime (ouroboros-desktop)
+  neila:
+    base_url: "http://neila:8090"
+    timeout_seconds: 30
+    internal: true
+
+  # Ahnis — internal AI memory service (mempalace-Aya-fork)
+  ahnis:
+    base_url: "http://ahnis:8091"
+    timeout_seconds: 30
+    internal: true
 
 # Order to try cloud providers when falling back from local
 fallback_order:
