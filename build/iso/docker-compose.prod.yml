@@ -988,6 +988,49 @@ services:
     volumes:
       - biz-docs-data:/data/biz-docs
 
+  neila:
+    image: prady/neila:1.0.0
+    restart: always
+    mem_limit: 256m
+    logging: *default-logging
+    networks:
+      - kryos-net
+    depends_on:
+      - inventor-engine
+      - audit-log
+      - notification-bus
+    ports:
+      - "8027:8027"
+    environment:
+      PORT: "8027"
+      NEILA_TICK_INTERVAL: "60"
+      INVENTOR_ENGINE_URL: http://inventor-engine:8022
+      AUDIT_LOG_URL: http://audit-log:8112
+      NOTIFICATION_BUS_URL: http://notification-bus:8111
+      SELF_LEARNING_URL: http://self-learning:8018
+      AHNIS_URL: http://ahnis:8028
+      MODEL_GATEWAY_URL: http://model-gateway:11430
+      LOG_LEVEL: INFO
+
+  ahnis:
+    image: prady/ahnis:1.0.0
+    restart: always
+    mem_limit: 256m
+    logging: *default-logging
+    networks:
+      - kryos-net
+    depends_on:
+      - audit-log
+    ports:
+      - "8028:8028"
+    environment:
+      PORT: "8028"
+      QDRANT_HOST: "${QDRANT_HOST:-}"
+      QDRANT_PORT: "6333"
+      AUDIT_LOG_URL: http://audit-log:8112
+      MODEL_GATEWAY_URL: http://model-gateway:11430
+      LOG_LEVEL: INFO
+
   system-organizer:
     image: prady/system-organizer:1.0.0
     restart: always

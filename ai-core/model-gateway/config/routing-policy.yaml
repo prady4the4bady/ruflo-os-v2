@@ -47,6 +47,14 @@ providers:
     timeout_seconds: 30
     internal: true
 
+  neila:
+    base_url: "http://neila:8027"
+    timeout_seconds: 30
+
+  ahnis:
+    base_url: "http://ahnis:8028"
+    timeout_seconds: 30
+
 # Order to try cloud providers when falling back from local
 fallback_order:
   - openai

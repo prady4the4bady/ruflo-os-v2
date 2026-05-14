@@ -123,6 +123,8 @@ SOCIAL_PUBLISHER_URL = os.getenv("SOCIAL_PUBLISHER_URL", "http://social-publishe
 MARKET_INTEL_URL = os.getenv("MARKET_INTEL_URL", "http://market-intel:8024")
 BIZ_DOCS_URL = os.getenv("BIZ_DOCS_URL", "http://biz-docs:8025")
 SYSTEM_ORGANIZER_URL = os.getenv("SYSTEM_ORGANIZER_URL", "http://system-organizer:8026")
+NEILA_URL = os.getenv("NEILA_URL", "http://neila:8027")
+AHNIS_URL = os.getenv("AHNIS_URL", "http://ahnis:8028")
 
 
 async def _notify_self_learning(
@@ -1408,6 +1410,50 @@ async def organizer_apply(suggestion_id: str) -> Response:
 async def inventor_digest() -> Response:
     async with httpx.AsyncClient(timeout=10.0) as c:
         r = await c.get(f"{INVENTOR_ENGINE_URL}/inventor/digest")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.get("/api/neila/status")
+async def neila_status() -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.get(f"{NEILA_URL}/neila/status")
+    return Response(content=r.content, media_type="application/json")
+
+
+@app.post("/api/neila/pause")
+async def neila_pause() -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.post(f"{NEILA_URL}/neila/pause")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.post("/api/neila/resume")
+async def neila_resume() -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.post(f"{NEILA_URL}/neila/resume")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.get("/api/ahnis/status")
+async def ahnis_status() -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.get(f"{AHNIS_URL}/ahnis/status")
+    return Response(content=r.content, media_type="application/json")
+
+
+@app.post("/api/memory/write")
+async def memory_write(request: Request) -> Response:
+    body = await request.json()
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.post(f"{AHNIS_URL}/memory/write", json=body)
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
+@app.post("/api/memory/search")
+async def memory_search(request: Request) -> Response:
+    body = await request.json()
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.post(f"{AHNIS_URL}/memory/search", json=body)
     return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
 
