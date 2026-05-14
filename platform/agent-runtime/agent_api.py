@@ -1404,6 +1404,13 @@ async def organizer_apply(suggestion_id: str) -> Response:
     return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
 
+@app.get("/api/inventor/digest")
+async def inventor_digest() -> Response:
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        r = await c.get(f"{INVENTOR_ENGINE_URL}/inventor/digest")
+    return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "agents": len(_manager.list_agents())}

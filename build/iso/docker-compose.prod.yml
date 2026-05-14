@@ -873,6 +873,50 @@ services:
       # On restrictive hosts, review with security team before enabling.
       - /var/run/docker.sock:/var/run/docker.sock
 
+  kryos-researcher:
+    image: prady/kryos-researcher:1.0.0
+    restart: always
+    mem_limit: 512m
+    logging: *default-logging
+    networks:
+      - kryos-net
+    depends_on:
+      - notification-bus
+      - model-gateway
+    ports:
+      - "8120:8120"
+    environment:
+      DATA_DIR: /data
+      NOTIFICATION_BUS_URL: http://notification-bus:8111
+      MEMORY_SERVICE_URL: http://memory-service:8108
+      MODEL_GATEWAY_URL: http://model-gateway:8000
+      RESEARCH_ENABLED: "${RESEARCH_ENABLED:-true}"
+      RESEARCH_INTERVAL_MIN: "${RESEARCH_INTERVAL_MIN:-60}"
+      PROPOSAL_INTERVAL_MIN: "${PROPOSAL_INTERVAL_MIN:-240}"
+      DAILY_PROPOSAL_BUDGET: "${DAILY_PROPOSAL_BUDGET:-3}"
+      LUMYN_PROPOSAL_MODEL: "${LUMYN_PROPOSAL_MODEL:-llama3.2:3b}"
+    volumes:
+      - kryos-researcher-data:/data
+
+  proposal-gate:
+    image: prady/proposal-gate:1.0.0
+    restart: always
+    mem_limit: 512m
+    logging: *default-logging
+    networks:
+      - kryos-net
+    depends_on:
+      - notification-bus
+    ports:
+      - "8121:8121"
+    environment:
+      DATA_DIR: /data
+      NOTIFICATION_BUS_URL: http://notification-bus:8111
+      AGENT_RUNTIME_URL: http://agent-runtime:8100
+      PROPOSAL_TTL_HOURS: "${PROPOSAL_TTL_HOURS:-168}"
+    volumes:
+      - proposal-gate-data:/data
+
   social-publisher:
     image: prady/social-publisher:1.0.0
     restart: always
@@ -967,6 +1011,8 @@ services:
       - organizer-data:/data/organizer
 
 volumes:
+  kryos-researcher-data:
+  proposal-gate-data:
   social-data:
   market-data:
   biz-docs-data:

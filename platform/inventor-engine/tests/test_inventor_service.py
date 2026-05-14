@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import os
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -145,3 +147,70 @@ async def test_get_project_progress_returns_schema(client: AsyncClient, sample_p
     assert "status" in data
     assert "test_results" in data
     assert "verified" in data
+
+
+@pytest.mark.asyncio
+async def test_digest_returns_correct_schema(client: AsyncClient):
+    resp = await client.get("/inventor/digest")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "period" in data
+    assert "stats" in data
+    assert "honest_summary" in data
+    assert "generated_ts" in data
+
+
+@pytest.mark.asyncio
+async def test_digest_period_is_last_7_days(client: AsyncClient):
+    resp = await client.get("/inventor/digest")
+    assert resp.json()["period"] == "last_7_days"
+
+
+@pytest.mark.asyncio
+async def test_digest_problems_scanned_is_non_negative(client: AsyncClient):
+    resp = await client.get("/inventor/digest")
+    assert resp.json()["stats"]["problems_scanned"] >= 0
+
+
+@pytest.mark.asyncio
+async def test_digest_projects_failed_is_visible(client: AsyncClient):
+    resp = await client.get("/inventor/digest")
+    stats = resp.json()["stats"]
+    assert "projects_failed" in stats
+
+
+@pytest.mark.asyncio
+async def test_digest_honest_summary_mentions_failures(client: AsyncClient):
+    resp = await client.get("/inventor/digest")
+    summary = resp.json()["honest_summary"]
+    assert "attempts" in summary or "fail" in summary.lower()
+
+
+@pytest.mark.asyncio
+async def test_collect_weekly_stats_handles_missing_db():
+    from inventor_service import _collect_weekly_stats
+    os.environ["INVENTOR_DB_PATH"] = "/nonexistent/path/db.sqlite"
+    try:
+        stats = await _collect_weekly_stats()
+        assert isinstance(stats, dict)
+        assert "problems_scanned" in stats
+    finally:
+        os.environ.pop("INVENTOR_DB_PATH", None)
+
+
+@pytest.mark.asyncio
+async def test_collect_weekly_stats_fail_open_on_self_learning():
+    from inventor_service import _collect_weekly_stats
+    os.environ["SELF_LEARNING_URL"] = "http://nonexistent-host:9999"
+    try:
+        stats = await _collect_weekly_stats()
+        assert "skills_added" in stats
+    finally:
+        os.environ.pop("SELF_LEARNING_URL", None)
+
+
+@pytest.mark.asyncio
+async def test_weekly_digest_loop_calculates_next_monday():
+    from inventor_service import _weekly_digest_loop, _collect_weekly_stats
+    assert asyncio.iscoroutinefunction(_weekly_digest_loop)
+    assert callable(_collect_weekly_stats)

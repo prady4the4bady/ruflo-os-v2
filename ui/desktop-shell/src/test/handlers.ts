@@ -2112,4 +2112,21 @@ export const handlers = [
         eta_minutes: 3,
       })
     ),
+
+    http.get("/api/inventor/digest", () =>
+      HttpResponse.json({
+        period: "last_7_days",
+        generated_ts: new Date().toISOString(),
+        stats: {
+          problems_scanned: 12,
+          proposals_created: 3,
+          projects_verified: 1,
+          projects_published: 1,
+          projects_failed: 2,
+          skills_added: 8,
+          storage_mb: 847.3,
+        },
+        honest_summary: "Prax researched 12 problems and completed 1 verified project. 2 attempts did not succeed — this is normal for experimental AI development. All failures are logged.",
+      })
+    ),
 ];

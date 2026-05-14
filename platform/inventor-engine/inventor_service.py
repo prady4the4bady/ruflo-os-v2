@@ -1,5 +1,5 @@
-"""Prady OS — Inventor Engine (Phase 39)
-Port 8022 — Prax autonomous project discovery and building service."""
+"""Prady OS — Inventor Engine (Phase 41)
+Port 8022 — Prax autonomous project discovery, building, and weekly reporting."""
 
 from __future__ import annotations
 
@@ -8,9 +8,12 @@ import logging
 import os
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import aiosqlite
+import httpx
+import psutil
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -40,6 +43,8 @@ class InventorState:
         self.pending_proposal: dict | None = None
         self.last_scan_ts: str = ""
         self._loop_task: asyncio.Task | None = None
+        self._idle_task: asyncio.Task | None = None
+        self._digest_task: asyncio.Task | None = None
         self.db: InventorDB | None = None
 
 
@@ -50,14 +55,17 @@ state = InventorState()
 async def lifespan(app: FastAPI):
     state.db = InventorDB()
     await state.db.init()
+    state._idle_task = asyncio.create_task(_idle_monitor_loop())
+    state._digest_task = asyncio.create_task(_weekly_digest_loop())
     yield
     state.loop_active = False
-    if state._loop_task and not state._loop_task.done():
-        state._loop_task.cancel()
-        try:
-            await state._loop_task
-        except asyncio.CancelledError:
-            pass
+    for task in (state._loop_task, state._idle_task, state._digest_task):
+        if task and not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 
 app = FastAPI(title="Prady OS Inventor Engine", version=VERSION, lifespan=lifespan)
@@ -68,6 +76,107 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+async def _idle_monitor_loop():
+    """Check system idle every 5 minutes. Start research when idle for 30+ min."""
+    consecutive_idle = 0
+    while True:
+        await asyncio.sleep(300)
+        try:
+            cpu = psutil.cpu_percent(interval=1)
+            ram = psutil.virtual_memory()
+            is_idle = cpu < 15.0 and ram.available > ram.total * 0.3
+            if is_idle:
+                consecutive_idle += 1
+            else:
+                consecutive_idle = 0
+
+            if consecutive_idle >= 6 and not state.loop_active:
+                logger.info("System idle for 30+ minutes — starting Prax research")
+                state.loop_active = True
+                state._loop_task = asyncio.create_task(inventor_loop())
+        except Exception as e:
+            logger.warning("Idle monitor error: %s", e)
+
+
+async def _collect_weekly_stats() -> dict[str, Any]:
+    """Collect stats from the past 7 days for the weekly digest."""
+    one_week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    db_path = os.getenv("INVENTOR_DB_PATH", "/data/inventor/inventor.db")
+    stats: dict[str, Any] = {
+        "problems_scanned": 0, "proposals_created": 0,
+        "projects_verified": 0, "projects_published": 0,
+        "projects_failed": 0, "skills_added": 0, "storage_mb": 0.0,
+    }
+    try:
+        async with aiosqlite.connect(db_path) as db:
+            for key, sql in (
+                ("problems_scanned", "SELECT COUNT(*) FROM problems WHERE discovered_ts >= ?"),
+                ("proposals_created", "SELECT COUNT(*) FROM proposals WHERE created_ts >= ?"),
+                ("projects_verified", "SELECT COUNT(*) FROM projects WHERE verified=1 AND build_started >= ?"),
+                ("projects_published", "SELECT COUNT(*) FROM projects WHERE repo_url IS NOT NULL AND repo_url != '' AND build_started >= ?"),
+                ("projects_failed", "SELECT COUNT(*) FROM projects WHERE status='failed' AND build_started >= ?"),
+            ):
+                async with db.execute(sql, (one_week_ago,)) as cur:
+                    row = await cur.fetchone()
+                    stats[key] = row[0] if row else 0
+    except Exception as e:
+        logger.warning("Weekly stats DB query failed: %s", e)
+
+    try:
+        sl_url = os.getenv("SELF_LEARNING_URL", "http://self-learning:8018")
+        async with httpx.AsyncClient(timeout=5.0) as c:
+            r = await c.get(f"{sl_url}/learn/stats")
+            if r.status_code == 200:
+                stats["skills_added"] = r.json().get("total_skills", 0)
+    except Exception:
+        pass
+
+    try:
+        project_root = os.getenv("WORKSPACE_BASE", "/var/prady/projects")
+        import shutil
+        _, used, _ = shutil.disk_usage(project_root)
+        stats["storage_mb"] = used / (1024 * 1024)
+    except Exception:
+        pass
+
+    return stats
+
+
+async def _weekly_digest_loop():
+    """Send a weekly digest every Monday at 9AM local time."""
+    while True:
+        now = datetime.now()
+        days_until_monday = (7 - now.weekday()) % 7
+        if days_until_monday == 0 and now.hour >= 9:
+            days_until_monday = 7
+        next_monday = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=days_until_monday)
+        wait_seconds = (next_monday - now).total_seconds()
+        await asyncio.sleep(wait_seconds)
+
+        try:
+            stats = await _collect_weekly_stats()
+            notify_url = os.getenv("NOTIFICATION_BUS_URL", "http://notification-bus:8111")
+            digest_body = (
+                f"This week Prax researched {stats['problems_scanned']} problems, "
+                f"generated {stats['proposals_created']} proposals, "
+                f"completed {stats['projects_verified']} verified projects, "
+                f"and published {stats['projects_published']} to GitHub. "
+                f"Skills learned: {stats['skills_added']}. "
+                f"Attempts that did not succeed: {stats['projects_failed']}. "
+                f"Total project storage: {stats['storage_mb']:.1f} MB."
+            )
+            async with httpx.AsyncClient(timeout=10.0) as c:
+                await c.post(f"{notify_url}/notify", json={
+                    "title": "Prax Weekly Digest",
+                    "body": digest_body,
+                    "severity": "info",
+                    "source": "inventor-engine",
+                })
+            logger.info("Weekly digest sent")
+        except Exception as e:
+            logger.warning("Weekly digest failed: %s", e)
 
 
 async def inventor_loop():
@@ -298,6 +407,23 @@ async def release_project(project_id: str) -> dict[str, Any]:
     releaser = ProjectReleaser()
     result = await releaser.release(project)
     return {"status": "released", "urls": result.urls}
+
+
+@app.get("/inventor/digest")
+async def get_weekly_digest() -> dict[str, Any]:
+    stats = await _collect_weekly_stats()
+    return {
+        "period": "last_7_days",
+        "generated_ts": datetime.now(timezone.utc).isoformat(),
+        "stats": stats,
+        "honest_summary": (
+            f"Prax researched {stats['problems_scanned']} problems "
+            f"and completed {stats['projects_verified']} verified "
+            f"projects. {stats['projects_failed']} attempts did "
+            f"not succeed — this is normal for experimental AI "
+            f"development. All failures are logged."
+        ),
+    }
 
 
 @app.get("/health")
