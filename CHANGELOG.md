@@ -11,6 +11,10 @@ All notable changes to this project are documented in this file.
 ### Updated
 - README.md: Final production version. Every claim maps to a test file or service. Includes "What Prax does NOT claim" section. Links to HONEST_LIMITATIONS.md prominently.
 - CHANGELOG.md: This entry.
+- CONTRIBUTING.md: Updated for v1.0.0 (42 phases complete, 44 services, all CI workflows documented).
+
+### Fixed
+- CI: Added disk space cleanup step to `build-iso.yml` before Buildroot compilation. Removes pre-installed toolchains (dotnet, Android SDK, Haskell) to free ~15 GB on GitHub-hosted runners, preventing out-of-disk failures during the 1+ hour Buildroot build.
 
 ## v1.0.0 — Phase 41 — 2026-05-14 "Self-Organization"
 
