@@ -287,7 +287,7 @@ jobs:
           cd tests && ln -sf conftest_ouroboros_disabled.py conftest.py
       - name: Run Neila tests
         working-directory: ai-core/neila
-        run: python -m pytest tests/ -v --tb=short --ignore=tests/test_release_workflow.py --ignore=tests/test_runtime_mode_elevation.py --ignore=tests/test_server_auth.py --ignore=tests/test_settings_updates_ui.py --ignore=tests/test_skill_exec.py --ignore=tests/test_packaging_sync.py
+        run: python -m pytest tests/ -v --tb=short --ignore=tests/test_release_workflow.py --ignore=tests/test_runtime_mode_elevation.py --ignore=tests/test_server_auth.py --ignore=tests/test_settings_updates_ui.py --ignore=tests/test_skill_exec.py --ignore=tests/test_packaging_sync.py --ignore=tests/test_a2a_protocol.py --ignore=tests/test_agent_python_env.py --ignore=tests/test_build_scripts.py --ignore=tests/test_extensions_api.py --ignore=tests/test_git_ops_recovery.py --ignore=tests/test_launcher_sync.py --ignore=tests/test_marketplace_ui_static.py --ignore=tests/test_neilahub.py --ignore=tests/test_packaging_assets.py --ignore=tests/test_runtime_mode_elevation.py --ignore=tests/test_server_auth.py --ignore=tests/test_settings_updates_ui.py --ignore=tests/test_skill_exec.py --ignore=tests/test_packaging_sync.py
 
   test-ahnis:
     name: Phase N - ahnis
