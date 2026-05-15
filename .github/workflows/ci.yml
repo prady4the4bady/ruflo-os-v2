@@ -26,20 +26,17 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: false
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: ai-core/model-gateway/requirements-dev.txt
-
       - name: Install dependencies
         working-directory: ai-core/model-gateway
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-
       - name: Run tests
         working-directory: ai-core/model-gateway
         env:
@@ -54,20 +51,17 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: false
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: orchestration/workflow-engine/requirements-dev.txt
-
       - name: Install dependencies
         working-directory: orchestration/workflow-engine
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-
       - name: Run tests
         working-directory: orchestration/workflow-engine
         run: pytest tests -v
@@ -80,20 +74,17 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: false
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: automation/screen-agent/requirements-dev.txt
-
       - name: Install dependencies
         working-directory: automation/screen-agent
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-
       - name: Run tests
         working-directory: automation/screen-agent
         run: pytest tests -v
@@ -106,18 +97,15 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: false
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm
           cache-dependency-path: desktop/aqua-shell/package-lock.json
-
       - name: Install dependencies
         working-directory: desktop/aqua-shell
         run: npm ci
-
       - name: Run tests
         working-directory: desktop/aqua-shell
         run: npm test
@@ -130,20 +118,17 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: false
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: agents/lumyn/requirements-dev.txt
-
       - name: Install dependencies
         working-directory: agents/lumyn
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-
       - name: Run tests
         working-directory: agents/lumyn
         run: pytest tests -v
@@ -156,20 +141,17 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: false
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: platform/kryos-researcher/requirements-dev.txt
-
       - name: Install dependencies
         working-directory: platform/kryos-researcher
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-
       - name: Run tests
         working-directory: platform/kryos-researcher
         run: pytest tests -v
@@ -182,20 +164,17 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: false
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: platform/proposal-gate/requirements-dev.txt
-
       - name: Install dependencies
         working-directory: platform/proposal-gate
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-
       - name: Run tests
         working-directory: platform/proposal-gate
         run: pytest tests -v
@@ -208,13 +187,10 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: false
-
       - name: Validate docker-compose.yml
         run: docker compose config --quiet
-
       - name: Validate docker-compose.dev.yml
         run: docker compose -f docker-compose.dev.yml config --quiet
-
       - name: Validate build/iso/docker-compose.prod.yml
         run: docker compose -f build/iso/docker-compose.prod.yml config --quiet
 
@@ -226,50 +202,42 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: false
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-
       - name: Install pip-audit
         run: pip install --upgrade pip pip-audit
-
       - name: Audit ai-core/model-gateway
         working-directory: ai-core/model-gateway
         run: |
           pip-audit --requirement requirements.txt --no-deps || \
-            echo "::notice title=pip-audit::ai-core/model-gateway has advisories (see log)"
-
+          echo "::notice title=pip-audit::ai-core/model-gateway has advisories (see log)"
       - name: Audit orchestration/workflow-engine
         working-directory: orchestration/workflow-engine
         run: |
           pip-audit --requirement requirements.txt --no-deps || \
-            echo "::notice title=pip-audit::orchestration/workflow-engine has advisories (see log)"
-
+          echo "::notice title=pip-audit::orchestration/workflow-engine has advisories (see log)"
       - name: Audit automation/screen-agent
         working-directory: automation/screen-agent
         run: |
           pip-audit --requirement requirements.txt --no-deps || \
-            echo "::notice title=pip-audit::automation/screen-agent has advisories (see log)"
-
+          echo "::notice title=pip-audit::automation/screen-agent has advisories (see log)"
       - name: Audit agents/lumyn
         working-directory: agents/lumyn
         run: |
           pip-audit --requirement requirements.txt --no-deps || \
-            echo "::notice title=pip-audit::agents/lumyn has advisories (see log)"
-
+          echo "::notice title=pip-audit::agents/lumyn has advisories (see log)"
       - name: Audit platform/kryos-researcher
         working-directory: platform/kryos-researcher
         run: |
           pip-audit --requirement requirements.txt --no-deps || \
-            echo "::notice title=pip-audit::platform/kryos-researcher has advisories (see log)"
-
+          echo "::notice title=pip-audit::platform/kryos-researcher has advisories (see log)"
       - name: Audit platform/proposal-gate
         working-directory: platform/proposal-gate
         run: |
           pip-audit --requirement requirements.txt --no-deps || \
-            echo "::notice title=pip-audit::platform/proposal-gate has advisories (see log)"
+          echo "::notice title=pip-audit::platform/proposal-gate has advisories (see log)"
 
   audit-node-deps:
     name: Audit Node.js dependencies
@@ -279,17 +247,15 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: false
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: "20"
-
       - name: Audit desktop/aqua-shell
         working-directory: desktop/aqua-shell
         run: |
           npm audit --audit-level=moderate || \
-            echo "::notice title=npm-audit::desktop/aqua-shell has advisories (see log)"
+          echo "::notice title=npm-audit::desktop/aqua-shell has advisories (see log)"
 
   test-neila:
     name: Phase N - neila
@@ -300,17 +266,17 @@ jobs:
         with:
           submodules: false
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Install dependencies
         working-directory: ai-core/neila
         run: pip install --no-cache-dir -r requirements.txt
       - name: Run Neila tests
         working-directory: ai-core/neila
-      run: python -m pytest tests/ -v --tb=short
-      
-    test-ahnis:
+        run: python -m pytest tests/ -v --tb=short
+
+  test-ahnis:
     name: Phase N - ahnis
     runs-on: ubuntu-latest
     steps:
@@ -319,15 +285,16 @@ jobs:
         with:
           submodules: false
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Install dependencies
         working-directory: ai-core/ahnis
         run: pip install --no-cache-dir -r requirements.txt
       - name: Run Ahnis tests
         working-directory: ai-core/ahnis
-      run: python -m pytest tests/ -v --tb=short
+        run: python -m pytest tests/ -v --tb=short
+
   trigger-build-iso:
     name: Trigger ISO build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
