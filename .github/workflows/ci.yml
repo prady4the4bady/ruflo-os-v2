@@ -291,6 +291,44 @@ jobs:
           npm audit --audit-level=moderate || \
             echo "::notice title=npm-audit::desktop/aqua-shell has advisories (see log)"
 
+  test-neila:
+    name: Phase N - neila
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: false
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        working-directory: ai-core/neila
+        run: pip install --no-cache-dir -r requirements.txt
+      - name: Run Neila tests
+        working-directory: ai-core/neila
+        run: pytest tests/ -v --tb=short
+
+  test-ahnis:
+    name: Phase N - ahnis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: false
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        working-directory: ai-core/ahnis
+        run: pip install --no-cache-dir -r requirements.txt
+      - name: Run Ahnis tests
+        working-directory: ai-core/ahnis
+        run: pytest tests/ -v --tb=short
+
   trigger-build-iso:
     name: Trigger ISO build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -305,6 +343,8 @@ jobs:
       - validate-compose
       - audit-python-deps
       - audit-node-deps
+        - test-neila
+        - test-ahnis
     runs-on: ubuntu-latest
     permissions:
       actions: write
