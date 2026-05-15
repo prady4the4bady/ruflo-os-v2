@@ -262,6 +262,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NEILA_DB_PATH: /tmp/neila_test.db
+      OPENAI_API_KEY: test-key
+      ANTHROPIC_API_KEY: test-key
+      OPENROUTER_API_KEY: test-key
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -277,9 +280,11 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-asyncio
-      - name: Create NEILA uppercase symlink for legacy test paths
+      - name: Create NEILA uppercase symlink and activate conftest
         working-directory: ai-core/neila
-        run: ln -sf neila NEILA
+        run: |
+          ln -sf neila NEILA
+          cd tests && ln -sf conftest_ouroboros_disabled.py conftest.py
       - name: Run Neila tests
         working-directory: ai-core/neila
         run: python -m pytest tests/ -v --tb=short
@@ -289,6 +294,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AHNIS_DB_PATH: /tmp/ahnis_test.db
+      OPENAI_API_KEY: test-key
+      ANTHROPIC_API_KEY: test-key
+      OPENROUTER_API_KEY: test-key
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -304,7 +312,7 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-asyncio
-      - name: Create AHNIS uppercase symlink for legacy test paths
+      - name: Create AHNIS uppercase symlink
         working-directory: ai-core/ahnis
         run: ln -sf ahnis AHNIS
       - name: Run Ahnis tests
