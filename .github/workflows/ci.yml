@@ -260,6 +260,8 @@ jobs:
   test-neila:
     name: Phase N - neila
     runs-on: ubuntu-latest
+    env:
+      NEILA_DB_PATH: /tmp/neila_test.db
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -282,6 +284,8 @@ jobs:
   test-ahnis:
     name: Phase N - ahnis
     runs-on: ubuntu-latest
+    env:
+      AHNIS_DB_PATH: /tmp/ahnis_test.db
     steps:
       - name: Checkout
         uses: actions/checkout@v5
