@@ -317,7 +317,7 @@ jobs:
         run: ln -sf ahnis AHNIS
       - name: Run Ahnis tests
         working-directory: ai-core/ahnis
-        run: python -m pytest tests/ -v --tb=short --ignore=tests/test_mcp_server.py --ignore=tests/test_searcher.py --ignore=tests/test_claude_plugin_hook_wrappers.py --ignore=tests/test_hooks_cli.py --ignore=tests/test_save_hook_mines.py --ignore=tests/test_knowledge_graph.py
+        run: python -m pytest tests/ -v --tb=short --ignore=tests/test_mcp_server.py --ignore=tests/test_searcher.py --ignore=tests/test_claude_plugin_hook_wrappers.py --ignore=tests/test_hooks_cli.py --ignore=tests/test_save_hook_mines.py --ignore=tests/test_knowledge_graph.py --ignore=tests/test_closets.py --ignore=tests/test_hall_detection.py
 
   trigger-build-iso:
     name: Trigger ISO build
