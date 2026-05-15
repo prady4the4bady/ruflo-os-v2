@@ -277,6 +277,9 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-asyncio
+      - name: Create NEILA uppercase symlink for legacy test paths
+        working-directory: ai-core/neila
+        run: ln -sf neila NEILA
       - name: Run Neila tests
         working-directory: ai-core/neila
         run: python -m pytest tests/ -v --tb=short
@@ -301,6 +304,9 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-asyncio
+      - name: Create AHNIS uppercase symlink for legacy test paths
+        working-directory: ai-core/ahnis
+        run: ln -sf ahnis AHNIS
       - name: Run Ahnis tests
         working-directory: ai-core/ahnis
         run: python -m pytest tests/ -v --tb=short
