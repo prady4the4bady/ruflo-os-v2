@@ -52,7 +52,19 @@ BR2_LINUX_KERNEL_DEFCONFIG="x86_64"
 BR2_LINUX_KERNEL_BZIMAGE=y
 
 # Root filesystem
+#
+# Two outputs are produced and both are required:
+# - rootfs.cpio.gz: gzipped cpio archive that ships as /boot/initrd.img
+#   inside the ISO. The kernel uses this as its initramfs and runs the
+#   entire system from RAM. This is what makes the ISO bootable in one
+#   shot without any extra live-boot tooling.
+# - rootfs.squashfs: read-only filesystem image kept around for an
+#   eventual install-to-disk path. The live boot does not depend on
+#   it; build_iso.sh stages it under /live/filesystem.squashfs in the
+#   ISO so the future installer can find it.
 BR2_TARGET_ROOTFS_SQUASHFS=y
+BR2_TARGET_ROOTFS_CPIO=y
+BR2_TARGET_ROOTFS_CPIO_GZIP=y
 
 # System tools
 BR2_PACKAGE_BASH=y

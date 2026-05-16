@@ -165,14 +165,39 @@ log "Step 5/6 — Creating bootable ISO with grub-mkrescue"
 ISO_STAGING="${BUILDROOT_OUTPUT}/iso-staging"
 mkdir -p "${ISO_STAGING}/boot/grub/theme"
 mkdir -p "${ISO_STAGING}/EFI/BOOT"
+mkdir -p "${ISO_STAGING}/live"
 
-# Kernel and initrd
+# Pre-flight: every Buildroot output we copy must exist BEFORE we
+# start staging. Without this, a missing file produces a silently
+# unbootable ISO (e.g. /boot/initrd.img absent → GRUB "file not
+# found" at boot). The check covers all three Buildroot outputs we
+# depend on so the failure points at the actual missing artifact.
+for f in \
+    "${BUILDROOT_OUTPUT}/images/bzImage" \
+    "${BUILDROOT_OUTPUT}/images/rootfs.cpio.gz" \
+    "${BUILDROOT_OUTPUT}/images/rootfs.squashfs"; do
+    if [ ! -f "$f" ]; then
+        err "Required Buildroot output missing: $f"
+        err "Verify kryos_defconfig has BR2_TARGET_ROOTFS_CPIO=y,"
+        err "BR2_TARGET_ROOTFS_CPIO_GZIP=y, and BR2_TARGET_ROOTFS_SQUASHFS=y"
+        ls -la "${BUILDROOT_OUTPUT}/images/" 2>/dev/null || true
+        exit 1
+    fi
+done
+
+# Kernel and rootfs initramfs (this is what the kernel boots into;
+# the cpio archive is the complete root filesystem)
 cp "${BUILDROOT_OUTPUT}/images/bzImage"          "${ISO_STAGING}/boot/vmlinuz"
-cp "${BUILDROOT_OUTPUT}/images/rootfs.squashfs"  "${ISO_STAGING}/boot/rootfs.squashfs"
+cp "${BUILDROOT_OUTPUT}/images/rootfs.cpio.gz"   "${ISO_STAGING}/boot/initrd.img"
 
-if [ -f "${BUILDROOT_OUTPUT}/images/rootfs.cpio.gz" ]; then
-    cp "${BUILDROOT_OUTPUT}/images/rootfs.cpio.gz" "${ISO_STAGING}/boot/initrd.img"
-fi
+# Squashfs: ships under /live/ for a future install-to-disk flow.
+# Not used by the live boot itself (the cpio initramfs is the
+# running root filesystem) but kept on the ISO as a release artifact.
+cp "${BUILDROOT_OUTPUT}/images/rootfs.squashfs"  "${ISO_STAGING}/live/filesystem.squashfs"
+# Also keep it under /boot/ for older grub.cfg menu entries that
+# reference /boot/rootfs.squashfs, so we do not break anything that
+# still expects that path.
+cp "${BUILDROOT_OUTPUT}/images/rootfs.squashfs"  "${ISO_STAGING}/boot/rootfs.squashfs"
 
 # Copy Memtest86+ if built
 find "${BUILDROOT_OUTPUT}/build" -name "memtest" -maxdepth 3 2>/dev/null \
