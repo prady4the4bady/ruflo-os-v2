@@ -184,10 +184,30 @@ cp "${GRUB_CFG}"                    "${ISO_STAGING}/boot/grub/grub.cfg"
 cp -r "${GRUB_THEME_DIR}/."         "${ISO_STAGING}/boot/grub/theme/"
 
 # Build ISO
+#
+# grub-mkrescue creates a hybrid BIOS+UEFI bootable ISO. The previous
+# version of this command passed a single --modules list that mixed
+# i386-pc-only and EFI-only modules:
+#
+#     --modules="normal linux ext2 fat squash4 part_msdos part_gpt \
+#                efi_gop gfxterm png all_video"
+#
+# That fails on Ubuntu 24.04 with:
+#     grub-mkrescue: error: cannot open
+#     `/usr/lib/grub/i386-pc/efi_gop.mod': No such file or directory.
+# because efi_gop only exists under x86_64-efi/ and i386-efi/, never
+# under i386-pc/, but --modules applies to every platform image
+# grub-mkrescue is asked to build.
+#
+# The right fix is to let grub-mkrescue pick its own per-platform module
+# set; the modules we actually need (normal, linux, search_*, configfile,
+# part_*, fat, ext2, squash4, video output, png) are already in its
+# default core list on every modern distribution. If a specific module
+# is missing in some future distro, add it via --install-modules instead
+# of --modules so platforms that do not have it are skipped.
 ISO_OUTPUT="${OUTPUT_DIR}/${ISO_NAME}"
 grub-mkrescue \
     --output="${ISO_OUTPUT}" \
-    --modules="normal linux ext2 fat squash4 part_msdos part_gpt efi_gop gfxterm png all_video" \
     "${ISO_STAGING}"
 
 ok "ISO created: ${ISO_OUTPUT}"

@@ -158,10 +158,17 @@ jobs:
       - name: Install Buildroot dependencies
         run: |
           sudo apt-get update
+          # grub-common provides /usr/lib/grub/* shared base.
+          # grub-pc-bin provides i386-pc/ modules for BIOS boot.
+          # grub-efi-amd64-bin provides x86_64-efi/ modules for UEFI boot.
+          # All three are required by grub-mkrescue for a hybrid ISO; the
+          # *-bin packages depend on grub-common in Ubuntu 24.04 but listing
+          # it explicitly removes any ambiguity if that ever changes.
           sudo apt-get install -y --no-install-recommends \
             build-essential libncurses-dev bison flex libssl-dev libelf-dev \
             wget rsync bc cpio unzip python3 python3-pip \
-            grub-pc-bin grub-efi-amd64-bin xorriso squashfs-tools mtools \
+            grub-common grub-pc-bin grub-efi-amd64-bin \
+            xorriso squashfs-tools mtools \
             jq
 
       - name: Setup Python (build host)
