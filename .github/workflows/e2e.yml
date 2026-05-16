@@ -34,10 +34,6 @@ env:
   ESSENTIAL_SERVICES: "redis model-gateway playwright-runner workflow-engine"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONDONTWRITEBYTECODE: "1"
-  # Opt every JavaScript action into the Node.js 24 runtime so we do
-  # not produce deprecation warnings about Node 20. Forced default on
-  # GitHub-hosted runners starting 2026-06-02.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   e2e-contract:

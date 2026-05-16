@@ -27,10 +27,6 @@ permissions:
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONDONTWRITEBYTECODE: "1"
-  # Opt every JavaScript action into the Node.js 24 runtime so we do
-  # not produce deprecation warnings about Node 20. Forced default on
-  # GitHub-hosted runners starting 2026-06-02.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   # ---------------------------------------------------------------------
@@ -332,7 +328,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload ISO artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: prady-os-iso
           path: |
@@ -347,7 +343,7 @@ jobs:
 
       - name: Upload build log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: prady-os-build-log
           path: build-iso-${{ github.run_id }}.log
@@ -371,7 +367,7 @@ jobs:
       contents: write
     steps:
       - name: Download ISO artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: prady-os-iso
           path: output
@@ -387,7 +383,7 @@ jobs:
           done
 
       - name: Publish release assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: "Prady OS ${{ github.ref_name }}"
           tag_name: ${{ github.ref_name }}

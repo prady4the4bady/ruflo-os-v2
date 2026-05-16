@@ -27,10 +27,6 @@ permissions:
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONDONTWRITEBYTECODE: "1"
-  # Opt every JavaScript action into the Node.js 24 runtime so we do
-  # not produce deprecation warnings about Node 20. Forced default on
-  # GitHub-hosted runners starting 2026-06-02.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   # ---------------------------------------------------------------------
@@ -116,7 +112,7 @@ jobs:
         with:
           submodules: false
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm
@@ -278,7 +274,7 @@ jobs:
         with:
           submodules: false
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "20"
       - name: Audit desktop/aqua-shell
