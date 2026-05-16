@@ -208,7 +208,14 @@ jobs:
         # SIGN_ISO=1 generates the SHA256 sidecar + release-checksums.txt
         # via sign_iso.sh; GPG signing only happens if KRYOS_GPG_KEY_ID
         # is set (it is not, in CI by default - that is fine).
-        run: SIGN_ISO=1 make -C build/iso iso-fast 2>&1 | tee build-iso-${{ github.run_id }}.log
+        # `export` ensures make inherits the variable; the inline `VAR=
+        # cmd` form alone is fragile across recipe shells.
+        env:
+          SIGN_ISO: "1"
+        run: |
+          set -euo pipefail
+          export SIGN_ISO
+          make -C build/iso iso-fast 2>&1 | tee build-iso-${{ github.run_id }}.log
 
       - name: Verify ISO outputs
         # Hard-fail if the ISO is missing or empty. build_iso.sh writes

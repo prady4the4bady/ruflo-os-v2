@@ -218,8 +218,14 @@ log "Step 6/6 — Verification"
 ISO_SIZE=$(du -sh "${ISO_OUTPUT}" | cut -f1)
 SHA256=$(sha256sum "${ISO_OUTPUT}" | awk '{print $1}')
 
-# Write sidecar file
+# Always write the release manifest files. The .sha256 sidecar is the
+# canonical checksum file; release-checksums.txt is a duplicate under
+# the conventional Linux-distro name. Both are required by downstream
+# verification tooling and the GitHub Release workflow regardless of
+# whether GPG signing is enabled, so they ship unconditionally here
+# rather than only inside the SIGN_ISO branch.
 echo "${SHA256}  ${ISO_NAME}" > "${OUTPUT_DIR}/${ISO_NAME%.iso}.sha256"
+echo "${SHA256}  ${ISO_NAME}" > "${OUTPUT_DIR}/release-checksums.txt"
 
 if [ "${SIGN_ISO}" = "1" ]; then
     log "Signing enabled (SIGN_ISO=1), generating release signatures"
