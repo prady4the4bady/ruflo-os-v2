@@ -277,6 +277,7 @@ jobs:
       - name: Install dependencies
         working-directory: ai-core/neila
         run: |
+<<<<<<< HEAD
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-asyncio
@@ -289,6 +290,13 @@ jobs:
         working-directory: ai-core/neila
         run: python -m pytest tests/ -v --tb=short --ignore=tests/test_release_workflow.py --ignore=tests/test_runtime_mode_elevation.py --ignore=tests/test_server_auth.py --ignore=tests/test_settings_updates_ui.py --ignore=tests/test_skill_exec.py --ignore=tests/test_packaging_sync.py --ignore=tests/test_a2a_protocol.py --ignore=tests/test_agent_python_env.py --ignore=tests/test_build_scripts.py --ignore=tests/test_extensions_api.py --ignore=tests/test_git_ops_recovery.py --ignore=tests/test_launcher_sync.py --ignore=tests/test_marketplace_ui_static.py --ignore=tests/test_neilahub.py --ignore=tests/test_packaging_assets.py --ignore=tests/test_runtime_mode_elevation.py --ignore=tests/test_server_auth.py --ignore=tests/test_settings_updates_ui.py --ignore=tests/test_skill_exec.py --ignore=tests/test_packaging_sync.py
 
+=======
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir -r requirements.txt
+      - name: Run Neila tests
+        working-directory: ai-core/neila
+        run: python -m pytest tests/ -v --tb=short -W error::DeprecationWarning
+>>>>>>> b9ca5c79 (feat(prady-os): v2.0.0 — full autonomous AI, zero-warning CI, ISO pipeline fix)
   test-ahnis:
     name: Phase N - ahnis
     runs-on: ubuntu-latest
@@ -309,6 +317,7 @@ jobs:
       - name: Install dependencies
         working-directory: ai-core/ahnis
         run: |
+<<<<<<< HEAD
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-asyncio
@@ -318,6 +327,34 @@ jobs:
       - name: Run Ahnis tests
         working-directory: ai-core/ahnis
         run: python -m pytest tests/ -v --tb=short --ignore=tests/test_mcp_server.py --ignore=tests/test_searcher.py --ignore=tests/test_claude_plugin_hook_wrappers.py --ignore=tests/test_hooks_cli.py --ignore=tests/test_save_hook_mines.py --ignore=tests/test_knowledge_graph.py --ignore=tests/test_closets.py --ignore=tests/test_hall_detection.py
+          pip install --no-cache-dir -r requirements.txt
+      - name: Run Ahnis tests
+        working-directory: ai-core/ahnis
+        run: python -m pytest tests/ -v --tb=short -W error::DeprecationWarning
+
+  test-prax-brain:
+    name: Phase N+1 - prax-brain
+    runs-on: ubuntu-latest
+    env:
+      PRAX_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ai-core/prax-brain/requirements.txt
+      - name: Install dependencies
+        working-directory: ai-core/prax-brain
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-mock pytest-timeout
+      - name: Run tests
+        working-directory: ai-core/prax-brain
+        run: python -m pytest tests/ -v --tb=short -W error::DeprecationWarning --timeout=30
 
   trigger-build-iso:
     name: Trigger ISO build
@@ -335,18 +372,21 @@ jobs:
       - audit-node-deps
       - test-neila
       - test-ahnis
+      - test-prax-brain
     runs-on: ubuntu-latest
     permissions:
       actions: write
       contents: read
     steps:
-      - name: Dispatch build-iso workflow
-        uses: actions/github-script@v8
+      - uses: actions/github-script@v8
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'build-iso.yml',
-              ref: 'main'
+              ref: 'main',
+              inputs: {
+                reason: 'Triggered by Monorepo CI push on main'
+              }
             });

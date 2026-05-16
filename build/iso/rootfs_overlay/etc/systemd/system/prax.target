@@ -1,0 +1,6 @@
+[Unit]
+Description=Prady OS Prax AI Stack
+After=multi-user.target
+Wants=ollama.service neila.service ahnis.service prax-brain.service
+[Install]
+WantedBy=multi-user.target

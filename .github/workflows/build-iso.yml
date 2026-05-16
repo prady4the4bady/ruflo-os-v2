@@ -42,10 +42,28 @@ jobs:
           bash -n build/iso/scripts/sign_iso.sh
           bash -n build/iso/scripts/write_usb.sh
 
+  smoke-test-iso:
+    name: Smoke test ISO config (fast, every push)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip pytest pyyaml Pillow
+      - run: python -m pytest build/iso/tests/ -W error::DeprecationWarning -q
+      - run: docker compose -f build/iso/docker-compose.prod.yml config --quiet
+      - run: docker compose -f docker-compose.dev.yml config --quiet
+      - run: |
+          bash -n build/iso/scripts/build_iso.sh
+          bash -n build/iso/scripts/sign_iso.sh
+          bash -n build/iso/scripts/write_usb.sh
+
   build-iso:
     name: Build and publish ISO
-    # Only run the heavy Buildroot build for tagged releases.
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 240
@@ -58,38 +76,14 @@ jobs:
           submodules: recursive
 
       - name: Maximize build space
-        run: |
-          echo "=== Disk space before cleanup ==="
-          df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo rm -rf /usr/local/share/powershell
-          sudo rm -rf /usr/share/swift
-          sudo rm -rf /usr/local/.ghcup
-          sudo rm -rf /usr/lib/jvm
-          sudo rm -rf /usr/share/doc
-          sudo rm -rf /usr/share/man
-          sudo apt-get clean
-          sudo rm -rf /var/lib/apt/lists/*
-          echo "=== Disk space after cleanup ==="
-          df -h
-
-      - name: Create swap file (prevents OOM during GCC compilation)
-        run: |
-          echo "=== Memory before swap ==="
-          free -h
-          # Disable and remove any existing swapfile first (runner may recycle)
-          sudo swapoff /swapfile 2>/dev/null || true
-          sudo rm -f /swapfile
-          # Use dd instead of fallocate to avoid 'Text file busy' on recycled runners
-          sudo dd if=/dev/zero of=/swapfile bs=1M count=6144 status=none
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          echo "=== Memory after swap ==="
-          free -h
+        uses: easimon/maximize-build-space@v10
+        with:
+          root-reserve-mb: 4096
+          swap-size-mb: 6144
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
 
       - name: Install Buildroot dependencies
         run: |
@@ -107,6 +101,15 @@ jobs:
 
       - name: Validate production compose
         run: docker compose -f build/iso/docker-compose.prod.yml config --quiet
+
+      - name: Install prax-brain into rootfs overlay
+        run: |
+          mkdir -p build/iso/rootfs_overlay/opt/prax-brain
+          cp -r ai-core/prax-brain/ build/iso/rootfs_overlay/opt/prax-brain/
+          mkdir -p build/iso/rootfs_overlay/opt/neila
+          cp -r ai-core/neila/ build/iso/rootfs_overlay/opt/neila/
+          mkdir -p build/iso/rootfs_overlay/opt/ahnis
+          cp -r ai-core/ahnis/ build/iso/rootfs_overlay/opt/ahnis/
 
       - name: Build ISO
         run: SIGN_ISO=1 make -C build/iso iso-fast

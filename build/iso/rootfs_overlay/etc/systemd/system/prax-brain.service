@@ -1,0 +1,13 @@
+[Unit]
+Description=Prax Autonomous Brain
+After=network.target ollama.service neila.service ahnis.service
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -m prav.autonomous_loop
+WorkingDirectory=/opt/prax-brain
+Restart=always
+RestartSec=30
+User=prax
+Environment=PRAX_DATA_DIR=/var/prax
+[Install]
+WantedBy=multi-user.target

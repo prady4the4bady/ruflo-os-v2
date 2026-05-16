@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prax-brain"
+version = "1.0.0"
+description = "Prax autonomous AI orchestration layer"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+filterwarnings = [
+  "error::DeprecationWarning",
+  "error::PendingDeprecationWarning",
+  "ignore::ResourceWarning",
+]
+
+[tool.setuptools.packages.find]
+include = ["prav*"]
