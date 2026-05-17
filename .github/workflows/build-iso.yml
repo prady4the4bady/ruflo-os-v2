@@ -320,7 +320,17 @@ jobs:
           set -euo pipefail
           mkdir -p output/sbom
           python3 -m pip install --upgrade pip
-          python3 -m pip install 'cyclonedx-bom>=4.6,<5'
+          # cyclonedx-bom 4.x exposed the input-file knob as `--outfile`,
+          # which v5.5 (April 2025) renamed to `--output-file` (the
+          # legacy `--outfile` survives as a deprecated alias). The
+          # SBOM step uses the v5+ flag name, so we pin >=5.5 to
+          # guarantee that name resolves. Capped at <7 because v7
+          # removed `--schema-version`, which we do not currently use
+          # but might in a follow-up; the cap can be lifted after a
+          # deliberate audit. Verified locally on 6.1.3:
+          #   cyclonedx-py requirements --help | grep output-file
+          #     -o <file>, --output-file <file>
+          python3 -m pip install --quiet 'cyclonedx-bom>=5.5,<7'
           AGG=output/sbom/aggregate-requirements.txt
           : > "$AGG"
           for r in ai-core/*/requirements.txt; do
