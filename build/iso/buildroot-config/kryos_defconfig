@@ -20,7 +20,7 @@ BR2_X86_CPU_COREI2CORE=y
 # free runners (7 GB RAM, no swap). -Os triggers very high memory
 # usage in GCC when compiling large files (e.g. bash, openssh).
 BR2_OPTIMIZE_0=y
-BR2_JLEVEL=1
+BR2_JLEVEL=4
 # Suppress all compiler warnings from third-party packages.
 # These warnings (e.g. -Wdiscarded-qualifiers from bash, -Wnonnull
 # from libattr) are noise from upstream sources we do not control.
